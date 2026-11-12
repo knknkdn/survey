@@ -234,18 +234,31 @@
     const text = buildText();
     const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(RECIPIENT) +
       "&su=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
+    const mailto = "mailto:" + RECIPIENT + "?subject=" + encodeURIComponent(SUBJECT) +
+      "&body=" + encodeURIComponent(text.replace(/\n/g, "\r\n"));
+    const iosGmail = "googlegmail:///co?to=" + encodeURIComponent(RECIPIENT) +
+      "&subject=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
     card.innerHTML =
       "<h2>راجع إجاباتك ثم أرسلها</h2>" +
       '<ul class="review">' + Q.map(q => '<li><span class="q">' + esc(q.text) + '</span><span class="a">' + esc(fmt(q)) + "</span></li>").join("") + "</ul>" +
       '<div class="to"><b>ترسل إلى</b><code id="addr">' + esc(RECIPIENT) + '</code></div>' +
       '<div class="actions">' +
         '<button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' +
-        '<a class="btn" id="send" href="' + esc(gmail) + '" target="_blank" rel="noopener">إرسال الإجابات عبر Gmail</a>' +
+        '<a class="btn" id="send" href="' + esc(mailto) + '">إرسال الإجابات عبر Gmail</a>' +
       "</div>" +
-      '<p class="note">يفتح الزر نافذة رسالة جاهزة في Gmail بإجاباتك مرتبة. اضغط إرسال داخل Gmail لإتمام العملية. إن لم تفتح النافذة، انسخ الإجابات وأرسلها إلى العنوان أعلاه.</p>' +
+      '<p class="note">يفتح الزر تطبيق Gmail في هاتفك برسالة جاهزة فيها إجاباتك مرتبة والعنوان مكتوب. اضغط إرسال داخل التطبيق لإتمام العملية.</p>' +
+      '<p class="note">لم يفتح التطبيق؟ <a href="' + esc(gmail) + '" target="_blank" rel="noopener" style="color:var(--accent)">افتح Gmail في المتصفح</a>، أو انسخ الإجابات من الأسفل وأرسلها إلى العنوان أعلاه.</p>' +
       '<textarea class="fallback" id="plain" readonly>' + esc(text) + "</textarea>" +
       '<div class="actions"><button class="btn ghost" id="copy" type="button">نسخ الإجابات</button><span class="note" id="copied" role="status"></span></div>';
     document.getElementById("edit").onclick = () => { step = Q.length - 1; render(); };
+    document.getElementById("send").addEventListener("click", e => {
+      // على الآيفون نحاول تطبيق Gmail مباشرة، وإن لم يفتح نرجع إلى تطبيق البريد الافتراضي
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        e.preventDefault();
+        window.location.href = iosGmail;
+        setTimeout(() => { if (!document.hidden) window.location.href = mailto; }, 1200);
+      }
+    });
     document.getElementById("copy").onclick = async () => {
       const ta = document.getElementById("plain"), out = document.getElementById("copied");
       try { await navigator.clipboard.writeText(text); out.textContent = "تم النسخ."; }
