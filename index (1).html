@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>استبيان الحزب</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Reem+Kufi:wght@500;700&display=swap">
+<style>
+  /* Layout: a single centered ballot-paper column; one question per screen, progress strip on top, review screen at the end. */
+  :root {
+    --bg: #e9eaec;
+    --paper: #f7f7f6;
+    --ink: #17181a;
+    --muted: #5d636b;
+    --line: #c9ccd1;
+    --accent: #a3201f;
+    --accent-ink: #ffffff;
+    --font-display: "Reem Kufi", "Segoe UI", Tahoma, sans-serif;
+    --font-body: "Almarai", "Segoe UI", Tahoma, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
+      --line: #34373c; --accent: #e0524f; --accent-ink: #151515;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
+    --line: #34373c; --accent: #e0524f; --accent-ink: #151515;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 640px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
+  .brand::before { content: ""; display: inline-block; width: 10px; height: 10px; background: var(--accent); margin-inline-end: 10px; }
+  .meta { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+  .progress { height: 4px; background: var(--line); }
+  .progress > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .qno { font-family: var(--font-display); color: var(--accent); font-size: .95rem; letter-spacing: .06em; }
+  h1, h2 { font-family: var(--font-display); font-weight: 700; line-height: 1.45; margin: 0; text-wrap: balance; }
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.15rem; }
+  .hint { color: var(--muted); margin: 0; font-size: .95rem; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt { position: relative; }
+  .opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .opt span {
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--line); padding: 12px 14px; background: var(--bg);
+    transition: border-color .15s, background .15s;
+  }
+  .opt span::before {
+    content: ""; flex: none; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 50%;
+  }
+  .opt.multi span::before { border-radius: 3px; }
+  .opt input:checked + span { border-color: var(--accent); background: var(--paper); }
+  .opt input:checked + span::before { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--paper); }
+  .opt input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .opt:hover span { border-color: var(--accent); }
+
+  input[type="text"], textarea {
+    width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); padding: 12px 14px; border-radius: 0;
+  }
+  textarea { min-height: 130px; resize: vertical; }
+  input[type="text"]:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 22px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 0;
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .spacer { flex: 1; }
+  .err { color: var(--accent); font-size: .92rem; min-height: 1.4em; margin: 0; }
+
+  .review { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+  .review li { border-top: 1px solid var(--line); padding: 12px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .review li:first-child { border-top: 0; }
+  .review .q { color: var(--muted); font-size: .9rem; }
+  .review .a { font-weight: 500; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+  .to { border: 1px dashed var(--line); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+  .to b { font-weight: 500; color: var(--muted); }
+  .to code { direction: ltr; unicode-bidi: plaintext; user-select: all; font-size: .95rem; overflow-wrap: anywhere; }
+  .note { color: var(--muted); font-size: .9rem; margin: 0; }
+  .fallback { font-family: var(--font-body); font-size: .85rem; direction: rtl; min-height: 150px; }
+  .intro-list { margin: 0; padding-inline-start: 1.2em; color: var(--muted); }
+
+  @media (max-width: 480px) {
+    .card { padding: 22px 16px; }
+    h1 { font-size: 1.35rem; }
+    .btn { flex: 1 1 auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <div class="brand">استبيان الحزب</div>
+    <div class="meta" id="meta"></div>
+  </header>
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  <main class="card" id="card" aria-live="polite"></main>
+</div>
+
+<script>
+  // ضع بريدك هنا قبل النشر النهائي
+  const RECIPIENT = "alsalakmohammed7@gmail.com";
+  const SUBJECT = "إجابات استبيان الحزب";
+
+  const Q = [
+    { id: "elections", type: "choice", text: "هل تريد إجراء انتخابات للقروب؟",
+      hint: "الجواب يحدد باقي الأسئلة التي ستراها بعد ذلك.",
+      options: ["نعم، أريد انتخابات", "لا، أفضّل بدون انتخابات", "لا يهمني"] },
+    { id: "name", type: "text", text: "ما اسمك أو لقبك داخل القروب؟", hint: "سيظهر في أعلى إجاباتك عند الإرسال.", placeholder: "اكتب اسمك" },
+    { id: "term", type: "choice", text: "ما مدة الدورة الانتخابية المناسبة؟",
+      options: ["أسبوع واحد", "شهر واحد", "ثلاثة أشهر", "مفتوحة حتى يقرر الأعضاء"] },
+    { id: "role", type: "choice", text: "ما المنصب الذي تريد دعمه أو الترشح له؟",
+      options: ["رئيس القروب", "نائب الرئيس", "أمين السر", "المتحدث الإعلامي", "لا أريد منصبًا"] },
+    { id: "vote", type: "choice", text: "كيف يجب أن يتم التصويت؟",
+      options: ["تصويت علني", "تصويت سري", "بالأغلبية البسيطة", "بأغلبية الثلثين"] },
+    { id: "wants", type: "multi", text: "ما الذي تريده من الحزب؟", hint: "يمكنك اختيار أكثر من إجابة.",
+      options: ["نقاشات منتظمة", "فعاليات وألعاب جماعية", "قرارات مشتركة", "قوانين واضحة للقروب", "تنظيم الأدوار بين الأعضاء"] },
+    { id: "activity", type: "choice", text: "ما مدى نشاطك المتوقع؟",
+      options: ["يوميًا", "عدة مرات في الأسبوع", "مرة في الأسبوع", "حسب الفعاليات فقط"] },
+    { id: "notes", type: "long", text: "هل لديك اقتراحات أو ملاحظات؟", hint: "اختياري. يمكنك تركه فارغًا.", optional: true, placeholder: "اكتب هنا" }
+  ];
+
+  const ans = {};
+  let step = 0;
+  const card = document.getElementById("card");
+  const bar = document.getElementById("bar");
+  const meta = document.getElementById("meta");
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const nf = n => n.toLocaleString("ar-EG");
+
+  function render() {
+    if (step === -1) return renderStart();
+    if (step >= Q.length) return renderReview();
+    const q = Q[step];
+    meta.textContent = "السؤال " + nf(step + 1) + " من " + nf(Q.length);
+    bar.style.width = (step / Q.length * 100) + "%";
+    let body = "";
+    if (q.type === "choice" || q.type === "multi") {
+      const multi = q.type === "multi";
+      const cur = ans[q.id] || (multi ? [] : "");
+      body = '<div class="options" role="' + (multi ? "group" : "radiogroup") + '" aria-labelledby="qt">' +
+        q.options.map((o, i) => {
+          const on = multi ? cur.includes(o) : cur === o;
+          return '<label class="opt' + (multi ? " multi" : "") + '"><input id="o' + i + '" type="' + (multi ? "checkbox" : "radio") +
+            '" name="q" value="' + esc(o) + '"' + (on ? " checked" : "") + '><span>' + esc(o) + '</span></label>';
+        }).join("") + "</div>";
+    } else if (q.type === "text") {
+      body = '<input id="field" type="text" autocomplete="off" placeholder="' + esc(q.placeholder || "") + '" value="' + esc(ans[q.id] || "") + '">';
+    } else {
+      body = '<textarea id="field" placeholder="' + esc(q.placeholder || "") + '">' + esc(ans[q.id] || "") + "</textarea>";
+    }
+    card.innerHTML =
+      '<div class="qno">السؤال ' + nf(step + 1) + "</div>" +
+      '<h1 id="qt">' + esc(q.text) + "</h1>" +
+      (q.hint ? '<p class="hint">' + esc(q.hint) + "</p>" : "") +
+      body +
+      '<p class="err" id="err" role="alert"></p>' +
+      '<div class="actions">' +
+        (step > 0 ? '<button class="btn ghost" id="back" type="button">السابق</button>' : "") +
+        '<span class="spacer"></span>' +
+        '<button class="btn" id="next" type="button">' + (step === Q.length - 1 ? "مراجعة الإجابات" : "التالي") + "</button>" +
+      "</div>";
+    document.getElementById("next").onclick = next;
+    const b = document.getElementById("back"); if (b) b.onclick = () => { save(); step--; render(); };
+    const f = document.getElementById("field"); if (f && q.type === "text") { f.focus(); f.addEventListener("keydown", e => { if (e.key === "Enter") next(); }); }
+  }
+
+  function save() {
+    const q = Q[step]; if (!q) return;
+    if (q.type === "choice") { const c = card.querySelector("input:checked"); ans[q.id] = c ? c.value : ""; }
+    else if (q.type === "multi") { ans[q.id] = [...card.querySelectorAll("input:checked")].map(i => i.value); }
+    else { const f = document.getElementById("field"); ans[q.id] = f ? f.value.trim() : ""; }
+  }
+
+  function next() {
+    save();
+    const q = Q[step], v = ans[q.id];
+    const empty = Array.isArray(v) ? v.length === 0 : !v;
+    if (empty && !q.optional) {
+      document.getElementById("err").textContent = q.type === "text" ? "اكتب إجابتك قبل المتابعة." : "اختر إجابة قبل المتابعة.";
+      return;
+    }
+    step++; render(); window.scrollTo({ top: 0 });
+  }
+
+  function fmt(q) { const v = ans[q.id]; if (Array.isArray(v)) return v.length ? v.join("، ") : "—"; return v || "—"; }
+
+  function buildText() {
+    const date = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+    const line = "──────────────────────";
+    let t = "إجابات استبيان الحزب\nالاسم: " + (ans.name || "—") + "\nالتاريخ: " + date + "\n" + line + "\n\n";
+    Q.forEach((q, i) => { t += (i + 1) + ") " + q.text + "\n    ← " + fmt(q) + "\n\n"; });
+    return t.trim() + "\n" + line;
+  }
+
+  function renderReview() {
+    meta.textContent = "المراجعة النهائية";
+    bar.style.width = "100%";
+    const text = buildText();
+    const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(RECIPIENT) +
+      "&su=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
+    card.innerHTML =
+      "<h2>راجع إجاباتك ثم أرسلها</h2>" +
+      '<ul class="review">' + Q.map(q => '<li><span class="q">' + esc(q.text) + '</span><span class="a">' + esc(fmt(q)) + "</span></li>").join("") + "</ul>" +
+      '<div class="to"><b>ترسل إلى</b><code id="addr">' + esc(RECIPIENT) + '</code></div>' +
+      '<div class="actions">' +
+        '<button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' +
+        '<a class="btn" id="send" href="' + esc(gmail) + '" target="_blank" rel="noopener">إرسال الإجابات عبر Gmail</a>' +
+      "</div>" +
+      '<p class="note">يفتح الزر نافذة رسالة جاهزة في Gmail بإجاباتك مرتبة. اضغط إرسال داخل Gmail لإتمام العملية. إن لم تفتح النافذة، انسخ الإجابات وأرسلها إلى العنوان أعلاه.</p>' +
+      '<textarea class="fallback" id="plain" readonly>' + esc(text) + "</textarea>" +
+      '<div class="actions"><button class="btn ghost" id="copy" type="button">نسخ الإجابات</button><span class="note" id="copied" role="status"></span></div>';
+    document.getElementById("edit").onclick = () => { step = Q.length - 1; render(); };
+    document.getElementById("copy").onclick = async () => {
+      const ta = document.getElementById("plain"), out = document.getElementById("copied");
+      try { await navigator.clipboard.writeText(text); out.textContent = "تم النسخ."; }
+      catch (e) { ta.focus(); ta.select(); out.textContent = "حدّدنا النص، انسخه يدويًا."; }
+    };
+  }
+
+  function renderStart() {
+    meta.textContent = "ثمانية أسئلة";
+    bar.style.width = "0";
+    card.innerHTML =
+      "<h1>أجب عن الأسئلة ثم أرسلها</h1>" +
+      '<p class="hint">يبدأ الاستبيان بسؤال الانتخابات. في النهاية تراجع إجاباتك، ثم يفتح لك زر الإرسال رسالة جاهزة في Gmail.</p>' +
+      '<div class="actions"><span class="spacer"></span><button class="btn" id="go" type="button">ابدأ</button></div>';
+    document.getElementById("go").onclick = () => { step = 0; render(); };
+  }
+
+  step = -1;
+  render();
+</script>
+
+</body>
+</html>
