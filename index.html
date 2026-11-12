@@ -17,19 +17,20 @@
     --line: #c9ccd1;
     --accent: #a3201f;
     --accent-ink: #ffffff;
+    --ok: #1f7a46;
     --font-display: "Reem Kufi", "Segoe UI", Tahoma, sans-serif;
     --font-body: "Almarai", "Segoe UI", Tahoma, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
-      --line: #34373c; --accent: #e0524f; --accent-ink: #151515;
+      --line: #34373c; --accent: #e0524f; --accent-ink: #151515; --ok: #4cc38a;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
-    --line: #34373c; --accent: #e0524f; --accent-ink: #151515;
+    --line: #34373c; --accent: #e0524f; --accent-ink: #151515; --ok: #4cc38a;
     color-scheme: dark;
   }
 
@@ -110,6 +111,25 @@
   .fallback { font-family: var(--font-body); font-size: .85rem; direction: rtl; min-height: 150px; }
   .intro-list { margin: 0; padding-inline-start: 1.2em; color: var(--muted); }
 
+
+  .info { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 0; }
+  .info div { display: flex; flex-direction: column; min-width: 0; }
+  .info dt { color: var(--muted); font-size: .85rem; }
+  .info dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .tbl th { background: var(--accent); color: var(--accent-ink); text-align: right; padding: 10px 12px; font-weight: 700; white-space: nowrap; }
+  .tbl td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  .tbl tbody tr:nth-child(even) { background: var(--bg); }
+  .tbl .c { width: 2.5em; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tbl th.c { color: var(--accent-ink); }
+  .tbl .ans { font-weight: 700; overflow-wrap: anywhere; white-space: pre-wrap; min-width: 9em; }
+  .ok { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--ok); padding: 14px 16px; }
+  .ok b { color: var(--ok); font-size: 1.1rem; font-family: var(--font-display); }
+  .ok span { color: var(--muted); font-size: .92rem; }
+  .fallback-box { display: flex; flex-direction: column; gap: 12px; border-top: 1px dashed var(--line); padding-top: 16px; }
+  .fallback-box[hidden] { display: none; }
+
   @media (max-width: 480px) {
     .card { padding: 22px 16px; }
     h1 { font-size: 1.35rem; }
@@ -132,8 +152,12 @@
 </div>
 
 <script>
-  // ضع بريدك هنا قبل النشر النهائي
-  const RECIPIENT = "alsalakmohammed7@gmail.com";
+  // البريد الذي تصله الإجابات
+  const RECIPIENT = "mohammedelsallak@yahoo.com";
+  // رابط Google Apps Script الذي يرسل الإجابات تلقائيًا من حساب Gmail المخصص
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww3Y1hLvaHeibDOyUX8clv5KyEVbhH3OOTd0QudSauvJpPkxEl1lzBDiZsoq3Au_X-Mg/exec";
+  const LOADED = Date.now();
+  const AUTO = /^https:\/\/script\.google\.com\/macros\/s\//.test(SCRIPT_URL);
   const SUBJECT = "إجابات استبيان الحزب";
 
   const Q = [
@@ -228,6 +252,45 @@
     return t.trim() + "\n" + line;
   }
 
+  function tripoliTime() {
+    return new Date().toLocaleString("ar-EG", { dateStyle: "full", timeStyle: "medium", timeZone: "Africa/Tripoli" });
+  }
+
+  function tableRows() {
+    return Q.map((q, i) => ({ n: nf(i + 1), q: q.text, a: fmt(q) }));
+  }
+
+  // جدول العرض داخل الصفحة
+  function pageTable(sentAt) {
+    const info = '<dl class="info"><div><dt>اسم المرسل</dt><dd>' + esc(ans.name || "—") + "</dd></div>" +
+      (sentAt ? '<div><dt>وقت الإرسال</dt><dd>' + esc(sentAt) + " (توقيت طرابلس)</dd></div>" : "") + "</dl>";
+    const rows = tableRows().map(r => '<tr><td class="c">' + r.n + "</td><td>" + esc(r.q) + '</td><td class="ans">' + esc(r.a) + "</td></tr>").join("");
+    return info + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="c">#</th><th>السؤال</th><th>الإجابة</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+  }
+
+  function bindIos(el, iosGmail, mailto) {
+    if (!el) return;
+    el.addEventListener("click", e => {
+      // على الآيفون نحاول تطبيق Gmail مباشرة، وإن لم يفتح نرجع إلى تطبيق البريد الافتراضي
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        e.preventDefault();
+        window.location.href = iosGmail;
+        setTimeout(() => { if (!document.hidden) window.location.href = mailto; }, 1200);
+      }
+    });
+  }
+
+  function renderDone(sentAt) {
+    meta.textContent = "تم الإرسال";
+    bar.style.width = "100%";
+    card.innerHTML =
+      '<div class="ok" role="status"><b>تم إرسال إجاباتك بنجاح</b><span>' + esc(sentAt) + " (توقيت طرابلس)</span></div>" +
+      pageTable(sentAt) +
+      '<div class="actions"><span class="spacer"></span><button class="btn ghost" id="again" type="button">استبيان جديد</button></div>';
+    document.getElementById("again").onclick = () => { Object.keys(ans).forEach(k => delete ans[k]); step = -1; render(); };
+    window.scrollTo({ top: 0 });
+  }
+
   function renderReview() {
     meta.textContent = "المراجعة النهائية";
     bar.style.width = "100%";
@@ -238,31 +301,54 @@
       "&body=" + encodeURIComponent(text.replace(/\n/g, "\r\n"));
     const iosGmail = "googlegmail:///co?to=" + encodeURIComponent(RECIPIENT) +
       "&subject=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
+    const sendEl = AUTO
+      ? '<button class="btn" id="send" type="button">إرسال الإجابات</button>'
+      : '<a class="btn" id="send" href="' + esc(mailto) + '">إرسال الإجابات عبر Gmail</a>';
     card.innerHTML =
       "<h2>راجع إجاباتك ثم أرسلها</h2>" +
-      '<ul class="review">' + Q.map(q => '<li><span class="q">' + esc(q.text) + '</span><span class="a">' + esc(fmt(q)) + "</span></li>").join("") + "</ul>" +
-      '<div class="to"><b>ترسل إلى</b><code id="addr">' + esc(RECIPIENT) + '</code></div>' +
-      '<div class="actions">' +
-        '<button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' +
-        '<a class="btn" id="send" href="' + esc(mailto) + '">إرسال الإجابات عبر Gmail</a>' +
-      "</div>" +
-      '<p class="note">يفتح الزر تطبيق Gmail في هاتفك برسالة جاهزة فيها إجاباتك مرتبة والعنوان مكتوب. اضغط إرسال داخل التطبيق لإتمام العملية.</p>' +
-      '<p class="note">لم يفتح التطبيق؟ <a href="' + esc(gmail) + '" target="_blank" rel="noopener" style="color:var(--accent)">افتح Gmail في المتصفح</a>، أو انسخ الإجابات من الأسفل وأرسلها إلى العنوان أعلاه.</p>' +
-      '<textarea class="fallback" id="plain" readonly>' + esc(text) + "</textarea>" +
-      '<div class="actions"><button class="btn ghost" id="copy" type="button">نسخ الإجابات</button><span class="note" id="copied" role="status"></span></div>';
+      pageTable(null) +
+      '<p class="note">عند الإرسال تصل إجاباتك واسمك إلى مسؤول القروب.</p>' +
+      '<input id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
+      '<p class="err" id="sendErr" role="alert"></p>' +
+      '<div class="actions"><button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' + sendEl + "</div>" +
+      '<div id="fallback" class="fallback-box"' + (AUTO ? " hidden" : "") + ">" +
+        '<p class="note">' + (AUTO ? "تعذّر الإرسال التلقائي. يمكنك الإرسال يدويًا:" : "يفتح الزر تطبيق Gmail في هاتفك برسالة جاهزة فيها إجاباتك مرتبة. اضغط إرسال داخل التطبيق لإتمام العملية.") + "</p>" +
+        (AUTO ? '<div class="actions"><a class="btn ghost" id="send2" href="' + esc(mailto) + '">إرسال عبر تطبيق البريد</a></div>' : "") +
+        '<p class="note">لم يفتح التطبيق؟ <a href="' + esc(gmail) + '" target="_blank" rel="noopener" style="color:var(--accent)">افتح Gmail في المتصفح</a>، أو انسخ الإجابات من الأسفل وأرسلها يدويًا.</p>' +
+        '<textarea class="fallback" id="plain" readonly>' + esc(text) + "</textarea>" +
+        '<div class="actions"><button class="btn ghost" id="copy" type="button">نسخ الإجابات</button><span class="note" id="copied" role="status"></span></div>' +
+      "</div>";
     document.getElementById("edit").onclick = () => { step = Q.length - 1; render(); };
-    document.getElementById("send").addEventListener("click", e => {
-      // على الآيفون نحاول تطبيق Gmail مباشرة، وإن لم يفتح نرجع إلى تطبيق البريد الافتراضي
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        e.preventDefault();
-        window.location.href = iosGmail;
-        setTimeout(() => { if (!document.hidden) window.location.href = mailto; }, 1200);
-      }
-    });
     document.getElementById("copy").onclick = async () => {
       const ta = document.getElementById("plain"), out = document.getElementById("copied");
       try { await navigator.clipboard.writeText(text); out.textContent = "تم النسخ."; }
       catch (e) { ta.focus(); ta.select(); out.textContent = "حدّدنا النص، انسخه يدويًا."; }
+    };
+    bindIos(document.getElementById("send2"), iosGmail, mailto);
+    if (!AUTO) { bindIos(document.getElementById("send"), iosGmail, mailto); return; }
+
+    const btn = document.getElementById("send");
+    btn.onclick = async () => {
+      const err = document.getElementById("sendErr");
+      err.textContent = "";
+      btn.disabled = true;
+      btn.textContent = "جارٍ الإرسال…";
+      try {
+        const sentAt = tripoliTime();
+        const payload = {
+          ans: ans,
+          hp: (document.getElementById("hp") || {}).value || "",
+          elapsed: Date.now() - LOADED
+        };
+        // Google لا تسمح بقراءة الرد من موقع خارجي، لذلك نرسل بوضع no-cors ونعتبر النجاح اكتمال الطلب
+        await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        renderDone(sentAt);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "إعادة المحاولة";
+        err.textContent = "تعذّر الإرسال التلقائي. أعد المحاولة أو استخدم الإرسال اليدوي أدناه.";
+        document.getElementById("fallback").hidden = false;
+      }
     };
   }
 
