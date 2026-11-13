@@ -6,7 +6,7 @@
 <title>استبيان الحزب</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Reem+Kufi:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
 <style>
   /* Layout: a single centered ballot-paper column; one question per screen, progress strip on top, review screen at the end. */
   :root {
@@ -18,8 +18,8 @@
     --accent: #a3201f;
     --accent-ink: #ffffff;
     --ok: #1f7a46;
-    --font-display: "Reem Kufi", "Segoe UI", Tahoma, sans-serif;
-    --font-body: "Almarai", "Segoe UI", Tahoma, sans-serif;
+    --font-display: "Cairo", "Segoe UI", Tahoma, sans-serif;
+    --font-body: "Tajawal", "Segoe UI", Tahoma, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -49,8 +49,7 @@
   .wrap { max-width: 640px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
 
   header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .brand { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: .02em; }
-  .brand::before { content: ""; display: inline-block; width: 10px; height: 10px; background: var(--accent); margin-inline-end: 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: 0; }
   .meta { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
 
   .progress { height: 4px; background: var(--line); }
@@ -105,11 +104,7 @@
   .review .q { color: var(--muted); font-size: .9rem; }
   .review .a { font-weight: 500; overflow-wrap: anywhere; white-space: pre-wrap; }
 
-  .to { border: 1px dashed var(--line); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
-  .to b { font-weight: 500; color: var(--muted); }
-  .to code { direction: ltr; unicode-bidi: plaintext; user-select: all; font-size: .95rem; overflow-wrap: anywhere; }
   .note { color: var(--muted); font-size: .9rem; margin: 0; }
-  .fallback { font-family: var(--font-body); font-size: .85rem; direction: rtl; min-height: 150px; }
   .intro-list { margin: 0; padding-inline-start: 1.2em; color: var(--muted); }
 
 
@@ -128,13 +123,40 @@
   .ok { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--ok); padding: 14px 16px; }
   .ok b { color: var(--ok); font-size: 1.1rem; font-family: var(--font-display); }
   .ok span { color: var(--muted); font-size: .92rem; }
-  .fallback-box { display: flex; flex-direction: column; gap: 12px; border-top: 1px dashed var(--line); padding-top: 16px; }
-  .fallback-box[hidden] { display: none; }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border: 1px solid var(--line); }
+  .facts div { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-inline-start: 1px solid var(--line); }
+  .facts div:first-child { border-inline-start: 0; }
+  .facts dt { color: var(--muted); font-size: .82rem; }
+  .facts dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+  .btn.big { width: 100%; padding: 15px 22px; font-size: 1.05rem; }
+
+  .logo { display: block; flex: none; }
+  .logo .lg-bg { fill: var(--accent); }
+  .logo .lg-fg { fill: none; stroke: var(--accent-ink); stroke-linecap: round; stroke-linejoin: round; }
+  .hero-logo { display: flex; align-items: center; gap: 14px; }
+  .hero-logo .tag { color: var(--muted); font-size: .9rem; line-height: 1.4; }
+
+  #splash { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px));
+    transition: opacity .3s ease; }
+  #splash.out { opacity: 0; pointer-events: none; }
+  #splash .logo { animation: pop .6s ease both; }
+  #splash .name { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; }
+  #splash .load { width: min(200px, 60vw); height: 4px; background: var(--line); overflow: hidden; }
+  #splash .load i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: right center; animation: fill 1.6s ease-in-out both; }
+  #splash .lt { color: var(--muted); font-size: .9rem; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) { #splash .logo, #splash .load i { animation: none; } }
 
   @media (max-width: 480px) {
     .card { padding: 22px 16px; }
     h1 { font-size: 1.35rem; }
     .btn { flex: 1 1 auto; }
+    .facts { grid-template-columns: 1fr; }
+    .facts div { border-inline-start: 0; border-top: 1px solid var(--line); flex-direction: row; justify-content: space-between; align-items: baseline; }
+    .facts div:first-child { border-top: 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -143,9 +165,15 @@
 <body>
 
 
+<div id="splash" dir="rtl" lang="ar" role="status" aria-live="polite">
+  <div id="splashLogo"></div>
+  <div class="name">استبيان الحزب</div>
+  <div class="load" aria-hidden="true"><i></i></div>
+  <div class="lt">جارٍ التحميل…</div>
+</div>
 <div class="wrap" dir="rtl" lang="ar">
   <header>
-    <div class="brand">استبيان الحزب</div>
+    <div class="brand" id="brand"></div>
     <div class="meta" id="meta"></div>
   </header>
   <div class="progress" aria-hidden="true"><i id="bar"></i></div>
@@ -153,13 +181,8 @@
 </div>
 
 <script>
-  // البريد الذي تصله الإجابات
-  const RECIPIENT = "mohammedelsallak@yahoo.com";
-  // رابط Google Apps Script الذي يرسل الإجابات تلقائيًا من حساب Gmail المخصص
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww3Y1hLvaHeibDOyUX8clv5KyEVbhH3OOTd0QudSauvJpPkxEl1lzBDiZsoq3Au_X-Mg/exec";
   const LOADED = Date.now();
-  const AUTO = /^https:\/\/script\.google\.com\/macros\/s\//.test(SCRIPT_URL);
-  const SUBJECT = "إجابات استبيان الحزب";
 
   const Q = [
     { id: "elections", type: "choice", text: "هل تريد إجراء انتخابات للقروب؟",
@@ -187,6 +210,14 @@
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const nf = n => n.toLocaleString("ar-EG");
+
+  function logo(px) {
+    return '<svg class="logo" width="' + px + '" height="' + px + '" viewBox="0 0 48 48" role="img" aria-label="شعار الحزب">' +
+      '<rect class="lg-bg" width="48" height="48" rx="10"/>' +
+      '<rect class="lg-fg" x="13" y="9" width="22" height="30" rx="3" stroke-width="2.5"/>' +
+      '<path class="lg-fg" d="M18 24.5l4.5 4.5 8-10" stroke-width="3.5"/>' +
+      "</svg>";
+  }
 
   function render() {
     if (step === -1) return renderStart();
@@ -245,14 +276,6 @@
 
   function fmt(q) { const v = ans[q.id]; if (Array.isArray(v)) return v.length ? v.join("، ") : "—"; return v || "—"; }
 
-  function buildText() {
-    const date = new Date().toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
-    const line = "──────────────────────";
-    let t = "إجابات استبيان الحزب\nالاسم: " + (ans.name || "—") + "\nالتاريخ: " + date + "\n" + line + "\n\n";
-    Q.forEach((q, i) => { t += (i + 1) + ") " + q.text + "\n    ← " + fmt(q) + "\n\n"; });
-    return t.trim() + "\n" + line;
-  }
-
   function tripoliTime() {
     return new Date().toLocaleString("ar-EG", { dateStyle: "full", timeStyle: "medium", timeZone: "Africa/Tripoli" });
   }
@@ -269,18 +292,6 @@
     return info + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="c">#</th><th>السؤال</th><th>الإجابة</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
   }
 
-  function bindIos(el, iosGmail, mailto) {
-    if (!el) return;
-    el.addEventListener("click", e => {
-      // على الآيفون نحاول تطبيق Gmail مباشرة، وإن لم يفتح نرجع إلى تطبيق البريد الافتراضي
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        e.preventDefault();
-        window.location.href = iosGmail;
-        setTimeout(() => { if (!document.hidden) window.location.href = mailto; }, 1200);
-      }
-    });
-  }
-
   function renderDone(sentAt) {
     meta.textContent = "تم الإرسال";
     bar.style.width = "100%";
@@ -295,38 +306,14 @@
   function renderReview() {
     meta.textContent = "المراجعة النهائية";
     bar.style.width = "100%";
-    const text = buildText();
-    const gmail = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(RECIPIENT) +
-      "&su=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
-    const mailto = "mailto:" + RECIPIENT + "?subject=" + encodeURIComponent(SUBJECT) +
-      "&body=" + encodeURIComponent(text.replace(/\n/g, "\r\n"));
-    const iosGmail = "googlegmail:///co?to=" + encodeURIComponent(RECIPIENT) +
-      "&subject=" + encodeURIComponent(SUBJECT) + "&body=" + encodeURIComponent(text);
-    const sendEl = AUTO
-      ? '<button class="btn" id="send" type="button">إرسال الإجابات</button>'
-      : '<a class="btn" id="send" href="' + esc(mailto) + '">إرسال الإجابات عبر Gmail</a>';
     card.innerHTML =
       "<h2>راجع إجاباتك ثم أرسلها</h2>" +
       pageTable(null) +
-      '<p class="note">عند الإرسال تصل إجاباتك واسمك إلى مسؤول القروب.</p>' +
       '<input id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden">' +
       '<p class="err" id="sendErr" role="alert"></p>' +
-      '<div class="actions"><button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' + sendEl + "</div>" +
-      '<div id="fallback" class="fallback-box"' + (AUTO ? " hidden" : "") + ">" +
-        '<p class="note">' + (AUTO ? "تعذّر الإرسال التلقائي. يمكنك الإرسال يدويًا:" : "يفتح الزر تطبيق Gmail في هاتفك برسالة جاهزة فيها إجاباتك مرتبة. اضغط إرسال داخل التطبيق لإتمام العملية.") + "</p>" +
-        (AUTO ? '<div class="actions"><a class="btn ghost" id="send2" href="' + esc(mailto) + '">إرسال عبر تطبيق البريد</a></div>' : "") +
-        '<p class="note">لم يفتح التطبيق؟ <a href="' + esc(gmail) + '" target="_blank" rel="noopener" style="color:var(--accent)">افتح Gmail في المتصفح</a>، أو انسخ الإجابات من الأسفل وأرسلها يدويًا.</p>' +
-        '<textarea class="fallback" id="plain" readonly>' + esc(text) + "</textarea>" +
-        '<div class="actions"><button class="btn ghost" id="copy" type="button">نسخ الإجابات</button><span class="note" id="copied" role="status"></span></div>' +
-      "</div>";
+      '<div class="actions"><button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' +
+      '<button class="btn" id="send" type="button">إرسال الإجابات</button></div>';
     document.getElementById("edit").onclick = () => { step = Q.length - 1; render(); };
-    document.getElementById("copy").onclick = async () => {
-      const ta = document.getElementById("plain"), out = document.getElementById("copied");
-      try { await navigator.clipboard.writeText(text); out.textContent = "تم النسخ."; }
-      catch (e) { ta.focus(); ta.select(); out.textContent = "حدّدنا النص، انسخه يدويًا."; }
-    };
-    bindIos(document.getElementById("send2"), iosGmail, mailto);
-    if (!AUTO) { bindIos(document.getElementById("send"), iosGmail, mailto); return; }
 
     const btn = document.getElementById("send");
     btn.onclick = async () => {
@@ -347,24 +334,38 @@
       } catch (e) {
         btn.disabled = false;
         btn.textContent = "إعادة المحاولة";
-        err.textContent = "تعذّر الإرسال التلقائي. أعد المحاولة أو استخدم الإرسال اليدوي أدناه.";
-        document.getElementById("fallback").hidden = false;
+        err.textContent = "تعذّر الإرسال. تأكد من اتصالك بالإنترنت ثم أعد المحاولة.";
       }
     };
   }
 
   function renderStart() {
-    meta.textContent = "ثمانية أسئلة";
+    meta.textContent = "";
     bar.style.width = "0";
     card.innerHTML =
-      "<h1>أجب عن الأسئلة ثم أرسلها</h1>" +
-      '<p class="hint">يبدأ الاستبيان بسؤال الانتخابات. في النهاية تراجع إجاباتك، ثم يفتح لك زر الإرسال رسالة جاهزة في Gmail.</p>' +
-      '<div class="actions"><span class="spacer"></span><button class="btn" id="go" type="button">ابدأ</button></div>';
-    document.getElementById("go").onclick = () => { step = 0; render(); };
+      '<div class="hero-logo">' + logo(64) + '<span class="tag">أهلًا بك</span></div>' +
+      "<h1>مرحبًا بك في استبيان الحزب</h1>" +
+      '<p class="hint">رأيك مهم لنا. أجب عن أسئلة قصيرة ليتعرّف الحزب على ما تريده من القروب.</p>' +
+      '<dl class="facts">' +
+        '<div><dt>عدد الأسئلة</dt><dd>' + nf(Q.length) + '</dd></div>' +
+        '<div><dt>المدة</dt><dd>دقيقتان تقريبًا</dd></div>' +
+        '<div><dt>السؤال الأول</dt><dd>الانتخابات</dd></div>' +
+      "</dl>" +
+      '<div class="actions"><button class="btn big" id="go" type="button">ابدأ الاستبيان</button></div>';
+    document.getElementById("go").onclick = () => { step = 0; render(); window.scrollTo({ top: 0 }); };
   }
 
+  document.getElementById("brand").innerHTML = logo(30) + "<span>استبيان الحزب</span>";
+  document.getElementById("splashLogo").innerHTML = logo(84);
   step = -1;
   render();
+
+  (function () {
+    const splash = document.getElementById("splash");
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function hide() { splash.classList.add("out"); setTimeout(() => splash.remove(), 350); }
+    setTimeout(hide, reduce ? 500 : 1900);
+  })();
 </script>
 
 </body>
