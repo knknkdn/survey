@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>لوحة نتائج الاستبيان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
+<style>
+  /* Layout: a narrow login card, then a dashboard with summary tiles, one result card per question, and a searchable table of respondents. */
+  :root {
+    --bg: #e9eaec; --paper: #f7f7f6; --ink: #17181a; --muted: #5d636b; --line: #c9ccd1;
+    --accent: #a3201f; --accent-ink: #ffffff; --bar: #c9ccd1; --ok: #1f7a46;
+    --font-display: "Cairo", "Segoe UI", Tahoma, sans-serif;
+    --font-body: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9; --line: #34373c;
+      --accent: #e0524f; --accent-ink: #151515; --bar: #34373c; --ok: #4cc38a; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9; --line: #34373c;
+    --accent: #e0524f; --accent-ink: #151515; --bar: #34373c; --ok: #4cc38a; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { max-width: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+    padding-block: 28px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; }
+  .logo { display: block; flex: none; }
+  .logo .lg-bg { fill: var(--accent); }
+  .logo .lg-fg { fill: none; stroke: var(--accent-ink); stroke-linecap: round; stroke-linejoin: round; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.45; text-wrap: balance; }
+  h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1.05rem; }
+  .muted { color: var(--muted); margin: 0; font-size: .95rem; }
+  .err { color: var(--accent); min-height: 1.4em; margin: 0; font-size: .95rem; }
+
+  input[type="password"], input[type="search"] {
+    width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); padding: 12px 14px; border-radius: 0;
+  }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn { font: inherit; font-weight: 600; cursor: pointer; padding: 11px 20px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 0; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .grow { flex: 1; min-width: 180px; }
+  .login { max-width: 420px; margin-inline: auto; width: 100%; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tile { background: var(--paper); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .tile .k { color: var(--muted); font-size: .85rem; }
+  .tile .v { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .bars { display: flex; flex-direction: column; gap: 12px; }
+  .bar .top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .bar .lbl { overflow-wrap: anywhere; }
+  .bar .num { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
+  .bar .num small { color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
+  .track { height: 10px; background: var(--bar); margin-top: 4px; }
+  .fill { height: 100%; background: var(--accent); }
+  .note { color: var(--muted); font-size: .85rem; margin: 0; }
+  .notes-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+  .notes-list li { border-top: 1px solid var(--line); padding-top: 10px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .notes-list li:first-child { border-top: 0; padding-top: 0; }
+  .notes-list b { display: block; font-size: .85rem; color: var(--muted); font-weight: 500; }
+
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th { background: var(--accent); color: var(--accent-ink); text-align: right; padding: 10px 12px; font-weight: 700; white-space: nowrap; }
+  td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; min-width: 7em; overflow-wrap: anywhere; }
+  tbody tr:nth-child(even) { background: var(--bg); }
+  td.c, th.c { min-width: 0; width: 2.5em; text-align: center; font-variant-numeric: tabular-nums; }
+  td.t { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.nm { font-weight: 700; }
+
+  .people { display: none; flex-direction: column; gap: 12px; }
+  .person { border: 1px solid var(--line); background: var(--bg); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .person .ph { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .person .ph b { font-family: var(--font-display); font-size: 1.1rem; }
+  .person .ph span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .person dl { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .person dl div { border-top: 1px solid var(--line); padding-top: 8px; min-width: 0; }
+  .person dt { color: var(--muted); font-size: .85rem; }
+  .person dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+  @media (max-width: 700px) { .tbl-wrap { display: none; } .people { display: flex; } }
+
+  @media (max-width: 480px) { .card { padding: 18px 14px; } .results { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand" id="brand"></div>
+    <div class="row" id="tools" hidden>
+      <button class="btn ghost" id="refresh" type="button">تحديث</button>
+      <button class="btn ghost" id="csv" type="button">تصدير CSV</button>
+      <button class="btn ghost" id="logout" type="button">خروج</button>
+    </div>
+  </header>
+
+  <section class="card login" id="login">
+    <h1>لوحة النتائج</h1>
+    <p class="muted">أدخل كلمة السر لعرض الإجابات.</p>
+    <form class="row" id="form" autocomplete="off">
+      <input id="key" class="grow" type="password" placeholder="كلمة السر" aria-label="كلمة السر" autocomplete="current-password">
+      <button class="btn" id="enter" type="submit">دخول</button>
+    </form>
+    <p class="err" id="err" role="alert"></p>
+  </section>
+
+  <main id="dash" hidden>
+    <div class="tiles" id="tiles"></div>
+    <h2 style="margin-top:8px">نسب الإجابات</h2>
+    <div class="results" id="results"></div>
+    <h2 style="margin-top:8px">إجابات كل شخص</h2>
+    <div class="card">
+      <div class="row">
+        <input id="search" class="grow" type="search" placeholder="ابحث بالاسم أو بأي إجابة" aria-label="بحث">
+        <span class="muted" id="count"></span>
+      </div>
+      <div class="tbl-wrap"><table id="tbl"></table></div>
+      <div class="people" id="people"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww3Y1hLvaHeibDOyUX8clv5KyEVbhH3OOTd0QudSauvJpPkxEl1lzBDiZsoq3Au_X-Mg/exec";
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const nf = n => Number(n).toLocaleString("ar-EG");
+  const pct = n => nf(Math.round(n)) + "٪";
+
+  let DATA = null, KEY = "";
+
+  function logo(px) {
+    return '<svg class="logo" width="' + px + '" height="' + px + '" viewBox="0 0 48 48" role="img" aria-label="شعار الحزب">' +
+      '<rect class="lg-bg" width="48" height="48" rx="10"/>' +
+      '<rect class="lg-fg" x="13" y="9" width="22" height="30" rx="3" stroke-width="2.5"/>' +
+      '<path class="lg-fg" d="M18 24.5l4.5 4.5 8-10" stroke-width="3.5"/></svg>';
+  }
+  $("brand").innerHTML = logo(30) + "<span>نتائج الاستبيان</span>";
+
+  const MESSAGES = {
+    wrong: "كلمة السر غير صحيحة.",
+    locked: "أُوقفت المحاولات مؤقتًا بعد عدة محاولات خاطئة. حاول بعد عشر دقائق.",
+    not_configured: "لم تُضبط كلمة السر في Apps Script بعد.",
+    error: "حدث خطأ في الخادم. أعد المحاولة بعد قليل.",
+    network: "تعذّر الاتصال. تأكد من الإنترنت ثم أعد المحاولة."
+  };
+
+  async function fetchData(key) {
+    let res;
+    try {
+      const r = await fetch(SCRIPT_URL + "?action=results&key=" + encodeURIComponent(key));
+      res = await r.json();
+    } catch (e) { throw new Error("network"); }
+    if (!res || res.error || !res.ok) throw new Error((res && res.error) || "error");
+    return res;
+  }
+
+  async function open(key, silent) {
+    $("err").textContent = "";
+    const btn = $("enter"); btn.disabled = true; btn.textContent = "جارٍ التحقق…";
+    try {
+      DATA = await fetchData(key);
+      KEY = key;
+      try { sessionStorage.setItem("k", key); } catch (e) {}
+      $("login").hidden = true; $("dash").hidden = false; $("tools").hidden = false;
+      render();
+    } catch (e) {
+      try { sessionStorage.removeItem("k"); } catch (x) {}
+      if (!silent) $("err").textContent = MESSAGES[e.message] || MESSAGES.error;
+      $("login").hidden = false; $("dash").hidden = true; $("tools").hidden = true;
+    } finally { btn.disabled = false; btn.textContent = "دخول"; }
+  }
+
+  function listOf(row, q) { return q.type === "multi" ? row.a[q.id].split(" | ").filter(Boolean) : [row.a[q.id]]; }
+
+  function render() {
+    const rows = DATA.rows, qs = DATA.questions, total = rows.length;
+    const last = total ? rows[total - 1].time : "—";
+    $("tiles").innerHTML =
+      '<div class="tile"><span class="k">عدد المشاركين</span><span class="v">' + nf(total) + "</span></div>" +
+      '<div class="tile"><span class="k">آخر مشاركة</span><span class="v" style="font-size:1.05rem">' + esc(last) + "</span></div>" +
+      '<div class="tile"><span class="k">عدد الأسئلة</span><span class="v">' + nf(qs.length) + "</span></div>";
+
+    if (!total) {
+      $("results").innerHTML = '<div class="card"><p class="muted">لا توجد إجابات بعد. ستظهر النسب هنا عند وصول أول مشاركة.</p></div>';
+    } else {
+      $("results").innerHTML = qs.map(q => {
+        if (q.type === "choice" || q.type === "multi") {
+          const counts = q.options.map(o => rows.filter(r => listOf(r, q).includes(o)).length);
+          const body = q.options.map((o, i) => {
+            const p = counts[i] / total * 100;
+            return '<div class="bar"><div class="top"><span class="lbl">' + esc(o) + '</span><span class="num">' + pct(p) +
+              "<small>(" + nf(counts[i]) + ")</small></span></div>" +
+              '<div class="track"><div class="fill" style="width:' + p.toFixed(1) + '%"></div></div></div>';
+          }).join("");
+          return '<section class="card"><h3>' + esc(q.q) + '</h3><div class="bars">' + body + "</div>" +
+            (q.type === "multi" ? '<p class="note">يمكن اختيار أكثر من إجابة، لذلك قد يزيد المجموع عن ١٠٠٪.</p>' : "") + "</section>";
+        }
+        if (q.id === "name") return "";
+        const items = rows.filter(r => r.a[q.id]).map(r => "<li><b>" + esc(r.a.name || "—") + "</b>" + esc(r.a[q.id]) + "</li>");
+        return '<section class="card"><h3>' + esc(q.q) + "</h3>" +
+          (items.length ? '<ul class="notes-list">' + items.join("") + "</ul>" : '<p class="muted">لا توجد إجابات.</p>') + "</section>";
+      }).join("");
+    }
+    renderTable();
+  }
+
+  function renderTable() {
+    const qs = DATA.questions, term = $("search").value.trim().toLowerCase();
+    const shown = DATA.rows.filter(r => !term || (r.time + " " + qs.map(q => r.a[q.id]).join(" ")).toLowerCase().includes(term));
+    $("count").textContent = "يعرض " + nf(shown.length) + " من " + nf(DATA.rows.length);
+    const cols = qs.filter(q => q.id !== "name");
+    $("tbl").innerHTML =
+      '<thead><tr><th class="c">#</th><th>الوقت</th><th>الاسم</th>' + cols.map(q => "<th>" + esc(q.q) + "</th>").join("") + "</tr></thead><tbody>" +
+      (shown.length ? shown.map(r => '<tr><td class="c">' + nf(r.n) + '</td><td class="t">' + esc(r.time) + '</td><td class="nm">' + esc(r.a.name || "—") + "</td>" +
+        cols.map(q => "<td>" + esc((r.a[q.id] || "—").split(" | ").join("، ")) + "</td>").join("") + "</tr>").join("")
+        : '<tr><td colspan="' + (cols.length + 3) + '" class="muted">لا توجد نتائج مطابقة.</td></tr>') + "</tbody>";
+    $("people").innerHTML = shown.length ? shown.map(r =>
+      '<article class="person"><div class="ph"><b>' + nf(r.n) + ". " + esc(r.a.name || "—") + "</b><span>" + esc(r.time) + "</span></div><dl>" +
+      cols.map(q => "<div><dt>" + esc(q.q) + "</dt><dd>" + esc((r.a[q.id] || "—").split(" | ").join("، ")) + "</dd></div>").join("") + "</dl></article>").join("")
+      : '<p class="muted">لا توجد نتائج مطابقة.</p>';
+  }
+
+  function csvCell(v) {
+    v = String(v == null ? "" : v).split(" | ").join("، ");
+    if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+    return '"' + v.replace(/"/g, '""') + '"';
+  }
+  function exportCsv() {
+    const qs = DATA.questions;
+    const lines = [["#", "الوقت"].concat(qs.map(q => q.q)).map(csvCell).join(",")]
+      .concat(DATA.rows.map(r => [r.n, r.time].concat(qs.map(q => r.a[q.id])).map(csvCell).join(",")));
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "survey-results.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  $("form").addEventListener("submit", e => { e.preventDefault(); const k = $("key").value; if (!k) { $("err").textContent = "اكتب كلمة السر."; return; } open(k, false); });
+  $("search").addEventListener("input", () => DATA && renderTable());
+  $("refresh").onclick = async () => { $("refresh").disabled = true; try { DATA = await fetchData(KEY); render(); } catch (e) { alert_(MESSAGES[e.message] || MESSAGES.error); } $("refresh").disabled = false; };
+  $("csv").onclick = () => DATA && exportCsv();
+  $("logout").onclick = () => { try { sessionStorage.removeItem("k"); } catch (e) {} DATA = null; KEY = ""; $("key").value = ""; $("dash").hidden = true; $("tools").hidden = true; $("login").hidden = false; };
+  function alert_(m) { $("login").hidden = true; const t = $("tiles"); t.insertAdjacentHTML("afterbegin", '<p class="err" role="alert" style="grid-column:1/-1">' + esc(m) + "</p>"); }
+
+  try { const k = sessionStorage.getItem("k"); if (k) open(k, true); } catch (e) {}
+</script>
+</body>
+</html>
