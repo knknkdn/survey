@@ -8,157 +8,164 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
 <style>
-  /* Layout: a single centered ballot-paper column; one question per screen, progress strip on top, review screen at the end. */
+  /* Layout: slim top bar with segmented progress, then one ballot-ticket card. The welcome ticket has a navy header, a perforated divider and a stub with facts and the start button. Questions use large ballot-box option cards. */
   :root {
-    --bg: #e9eaec;
-    --paper: #f7f7f6;
-    --ink: #17181a;
-    --muted: #5d636b;
-    --line: #c9ccd1;
-    --accent: #a3201f;
-    --accent-ink: #ffffff;
-    --ok: #1f7a46;
+    --bg: #eceff4; --paper: #ffffff; --ink: #111a2c; --muted: #5a6478; --line: #d8dde7;
+    --accent: #b3202a; --accent-soft: #fbe8ea; --on-accent: #ffffff;
+    --navy: #0e1b38; --on-navy: #ffffff; --navy-accent: #ef5a62;
+    --ok: #1b7a49;
+    --shadow: 0 1px 2px rgba(14,27,56,.06), 0 18px 40px -18px rgba(14,27,56,.28);
     --font-display: "Cairo", "Segoe UI", Tahoma, sans-serif;
     --font-body: "Tajawal", "Segoe UI", Tahoma, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
-      --line: #34373c; --accent: #e0524f; --accent-ink: #151515; --ok: #4cc38a;
+      --bg: #0a101d; --paper: #121b2e; --ink: #eef1f7; --muted: #9aa6bc; --line: #25324b;
+      --accent: #ee5860; --accent-soft: #2b1b27; --on-accent: #1c090c;
+      --navy: #16264a; --ok: #4cc38a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -18px rgba(0,0,0,.7);
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9;
-    --line: #34373c; --accent: #e0524f; --accent-ink: #151515; --ok: #4cc38a;
+    --bg: #0a101d; --paper: #121b2e; --ink: #eef1f7; --muted: #9aa6bc; --line: #25324b;
+    --accent: #ee5860; --accent-soft: #2b1b27; --on-accent: #1c090c;
+    --navy: #16264a; --ok: #4cc38a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 18px 40px -18px rgba(0,0,0,.7);
     color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { max-width: 100%; overflow-x: hidden; }
   body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 1.7;
-    padding-block: 28px 48px;
+    background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.75;
+    padding-block: 0 56px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  html, body { max-width: 100%; overflow-x: hidden; }
-  .wrap { max-width: 640px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+  .app { max-width: 700px; margin-inline: auto; }
 
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: 0; }
-  .meta { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
-
-  .progress { height: 4px; background: var(--line); }
-  .progress > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
-
-  .card { background: var(--paper); border: 1px solid var(--line); padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-  .qno { font-family: var(--font-display); color: var(--accent); font-size: .95rem; letter-spacing: .06em; }
-  h1, h2 { font-family: var(--font-display); font-weight: 700; line-height: 1.45; margin: 0; text-wrap: balance; }
-  h1 { font-size: 1.6rem; }
-  h2 { font-size: 1.15rem; }
-  .hint { color: var(--muted); margin: 0; font-size: .95rem; }
-
-  .options { display: flex; flex-direction: column; gap: 10px; }
-  .opt { position: relative; }
-  .opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .opt span {
-    display: flex; align-items: center; gap: 12px;
-    border: 1px solid var(--line); padding: 12px 14px; background: var(--bg);
-    transition: border-color .15s, background .15s;
-  }
-  .opt span::before {
-    content: ""; flex: none; width: 18px; height: 18px; border: 2px solid var(--muted); border-radius: 50%;
-  }
-  .opt.multi span::before { border-radius: 3px; }
-  .opt input:checked + span { border-color: var(--accent); background: var(--paper); }
-  .opt input:checked + span::before { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--paper); }
-  .opt input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .opt:hover span { border-color: var(--accent); }
-
-  input[type="text"], textarea {
-    width: 100%; font: inherit; color: var(--ink); background: var(--bg);
-    border: 1px solid var(--line); padding: 12px 14px; border-radius: 0;
-  }
-  textarea { min-height: 130px; resize: vertical; }
-  input[type="text"]:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .btn {
-    font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-    padding: 12px 22px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 0;
-  }
-  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-  .btn:hover { filter: brightness(1.08); }
-  .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .btn[disabled] { opacity: .45; cursor: not-allowed; }
-  .spacer { flex: 1; }
-  .err { color: var(--accent); font-size: .92rem; min-height: 1.4em; margin: 0; }
-
-  .review { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-  .review li { border-top: 1px solid var(--line); padding: 12px 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .review li:first-child { border-top: 0; }
-  .review .q { color: var(--muted); font-size: .9rem; }
-  .review .a { font-weight: 500; overflow-wrap: anywhere; white-space: pre-wrap; }
-
-  .note { color: var(--muted); font-size: .9rem; margin: 0; }
-  .intro-list { margin: 0; padding-inline-start: 1.2em; color: var(--muted); }
-
-
-  .info { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 0; }
-  .info div { display: flex; flex-direction: column; min-width: 0; }
-  .info dt { color: var(--muted); font-size: .85rem; }
-  .info dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
-  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); }
-  .tbl { width: 100%; border-collapse: collapse; font-size: .95rem; }
-  .tbl th { background: var(--accent); color: var(--accent-ink); text-align: right; padding: 10px 12px; font-weight: 700; white-space: nowrap; }
-  .tbl td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
-  .tbl tbody tr:nth-child(even) { background: var(--bg); }
-  .tbl .c { width: 2.5em; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .tbl th.c { color: var(--accent-ink); }
-  .tbl .ans { font-weight: 700; overflow-wrap: anywhere; white-space: pre-wrap; min-width: 9em; }
-  .ok { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--ok); padding: 14px 16px; }
-  .ok b { color: var(--ok); font-size: 1.1rem; font-family: var(--font-display); }
-  .ok span { color: var(--muted); font-size: .92rem; }
-
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border: 1px solid var(--line); }
-  .facts div { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-inline-start: 1px solid var(--line); }
-  .facts div:first-child { border-inline-start: 0; }
-  .facts dt { color: var(--muted); font-size: .82rem; }
-  .facts dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
-  .btn.big { width: 100%; padding: 15px 22px; font-size: 1.05rem; }
+  /* top bar */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 20px 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; }
+  .count { color: var(--muted); font-size: .88rem; background: var(--paper); border: 1px solid var(--line); padding: 3px 14px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .segs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; margin-bottom: 20px; }
+  .segs i { height: 5px; border-radius: 3px; background: var(--line); transition: background .3s ease; }
+  .segs i.on { background: var(--accent); }
 
   .logo { display: block; flex: none; }
   .logo .lg-bg { fill: var(--accent); }
-  .logo .lg-fg { fill: none; stroke: var(--accent-ink); stroke-linecap: round; stroke-linejoin: round; }
-  .hero-logo { display: flex; align-items: center; gap: 14px; }
-  .hero-logo .tag { color: var(--muted); font-size: .9rem; line-height: 1.4; }
+  .logo .lg-fg { fill: none; stroke: var(--on-accent); stroke-linecap: round; stroke-linejoin: round; }
 
-  #splash { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px));
-    transition: opacity .3s ease; }
+  /* ticket card */
+  .ticket { position: relative; border-radius: 22px; overflow: hidden; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow); animation: rise .45s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  h1, h2 { font-family: var(--font-display); font-weight: 700; margin: 0; line-height: 1.5; text-wrap: balance; }
+  h1:focus { outline: none; }
+  .hint { color: var(--muted); margin: 0; font-size: .98rem; }
+  .chip { display: inline-block; align-self: flex-start; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .85rem; padding: 2px 14px; border-radius: 999px; }
+
+  /* welcome */
+  .hero { background-color: var(--navy); color: var(--on-navy); padding: 34px 28px 40px; display: flex; flex-direction: column; gap: 14px;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 2px, transparent 2px 16px); }
+  .hero .eyebrow { display: flex; align-items: center; gap: 14px; }
+  .hero .eyebrow span { color: rgba(255,255,255,.75); font-size: .95rem; letter-spacing: .02em; }
+  .hero h1 { font-size: 2rem; line-height: 1.4; }
+  .hero p { margin: 0; color: rgba(255,255,255,.82); max-width: 34em; }
+  .perf { position: relative; height: 0; border-top: 2px dashed var(--line); }
+  .perf::before, .perf::after { content: ""; position: absolute; top: -14px; width: 26px; height: 26px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
+  .perf::before { right: -14px; } .perf::after { left: -14px; }
+  .stub { padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 22px; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0; }
+  .facts div { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+  .facts dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1.3; color: var(--accent); order: 1; }
+  .facts dt { color: var(--muted); font-size: .88rem; order: 2; }
+
+  /* question */
+  .qhead { padding: 28px 28px 4px; display: flex; flex-direction: column; gap: 12px; }
+  .qhead h1 { font-size: 1.65rem; }
+  .qbody { padding: 18px 28px 4px; display: flex; flex-direction: column; gap: 12px; }
+  .opt { position: relative; display: block; }
+  .opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+  .opt .box { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 12px 18px; border: 2px solid var(--line); border-radius: 16px; background: var(--paper);
+    transition: border-color .15s, background .15s, transform .15s; animation: rise .4s ease both; animation-delay: calc(var(--i, 0) * 45ms); }
+  .opt .mk { flex: none; width: 28px; height: 28px; border: 2px solid var(--muted); border-radius: 50%; display: grid; place-items: center; color: var(--on-accent); transition: background .15s, border-color .15s; }
+  .opt.multi .mk { border-radius: 8px; }
+  .opt .mk svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(.4); transition: opacity .15s, transform .2s ease; }
+  .opt .tx { font-weight: 500; overflow-wrap: anywhere; }
+  .opt:hover .box { border-color: var(--accent); transform: translateY(-1px); }
+  .opt input:checked + .box { border-color: var(--accent); background: var(--accent-soft); }
+  .opt input:checked + .box .mk { background: var(--accent); border-color: var(--accent); }
+  .opt input:checked + .box .mk svg { opacity: 1; transform: scale(1); }
+  .opt input:focus-visible + .box { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  .field { width: 100%; font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 16px; padding: 15px 18px; transition: border-color .15s; }
+  textarea.field { min-height: 150px; resize: vertical; }
+  .field:focus { outline: none; border-color: var(--accent); }
+  .field::placeholder { color: var(--muted); opacity: .8; }
+
+  .err { color: var(--accent); font-size: .95rem; min-height: 1.4em; margin: 0; padding: 8px 28px 0; }
+  .actions { display: flex; gap: 12px; padding: 12px 28px 28px; align-items: center; }
+  .stub .actions { padding: 0; }
+  .spacer { flex: 1; }
+  .btn { font: inherit; font-weight: 700; cursor: pointer; border: 2px solid var(--accent); background: var(--accent); color: var(--on-accent); border-radius: 16px; padding: 13px 28px; min-height: 54px; transition: transform .15s, filter .15s; }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.07); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover { border-color: var(--ink); filter: none; }
+  .btn.big { width: 100%; font-size: 1.1rem; min-height: 60px; }
+  .btn[disabled] { opacity: .55; cursor: not-allowed; transform: none; }
+  .btn:focus-visible, .edit:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  /* review and done */
+  .rv-list { padding: 18px 28px 4px; display: flex; flex-direction: column; }
+  .rv { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--line); min-width: 0; }
+  .rv:first-child { border-top: 0; }
+  .rv-t { display: flex; gap: 14px; min-width: 0; }
+  .rv-n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .85rem; display: grid; place-items: center; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .rq { color: var(--muted); font-size: .9rem; line-height: 1.5; }
+  .ra { font-weight: 700; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .edit { flex: none; font: inherit; font-size: .9rem; font-weight: 700; color: var(--accent); background: transparent; border: 2px solid var(--accent-soft); border-radius: 999px; padding: 2px 16px; cursor: pointer; }
+  .edit:hover { border-color: var(--accent); }
+  .done-top { padding: 34px 28px 8px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  .tick { width: 84px; height: 84px; }
+  .tick circle { fill: none; stroke: var(--ok); stroke-width: 3; stroke-dasharray: 151; stroke-dashoffset: 151; animation: draw .7s ease forwards; }
+  .tick path { fill: none; stroke: var(--ok); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .45s .55s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .when { color: var(--muted); font-size: .95rem; font-variant-numeric: tabular-nums; }
+
+  /* splash */
+  #splash { position: fixed; inset: 0; z-index: 50; background: var(--navy); color: var(--on-navy); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px)); transition: opacity .35s ease; }
   #splash.out { opacity: 0; pointer-events: none; }
   #splash .logo { animation: pop .6s ease both; }
-  #splash .name { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; }
-  #splash .load { width: min(200px, 60vw); height: 4px; background: var(--line); overflow: hidden; }
-  #splash .load i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: right center; animation: fill 1.6s ease-in-out both; }
-  #splash .lt { color: var(--muted); font-size: .9rem; }
+  #splash .name { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; }
+  #splash .load { width: min(200px, 60vw); height: 4px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; }
+  #splash .load i { display: block; height: 100%; width: 100%; background: var(--navy-accent); transform-origin: right center; animation: fill 1.6s ease-in-out both; }
+  #splash .lt { color: rgba(255,255,255,.7); font-size: .9rem; }
   @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-  @media (prefers-reduced-motion: reduce) { #splash .logo, #splash .load i { animation: none; } }
 
-  @media (max-width: 480px) {
-    .card { padding: 22px 16px; }
-    h1 { font-size: 1.35rem; }
-    .btn { flex: 1 1 auto; }
-    .facts { grid-template-columns: 1fr; }
-    .facts div { border-inline-start: 0; border-top: 1px solid var(--line); flex-direction: row; justify-content: space-between; align-items: baseline; }
+  @media (max-width: 520px) {
+    body { font-size: 16.5px; }
+    .hero { padding: 28px 20px 34px; } .hero h1 { font-size: 1.65rem; }
+    .stub { padding: 22px 20px 24px; }
+    .facts { grid-template-columns: 1fr; gap: 0; }
+    .facts div { flex-direction: row; justify-content: space-between; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); }
     .facts div:first-child { border-top: 0; }
+    .facts dd { order: 2; font-size: 1.15rem; } .facts dt { order: 1; font-size: .98rem; }
+    .qhead { padding: 24px 20px 2px; } .qhead h1 { font-size: 1.4rem; }
+    .qbody, .rv-list { padding-inline: 20px; }
+    .err { padding-inline: 20px; } .actions { padding: 12px 20px 22px; }
+    .actions .spacer { display: none; }
+    .btn { flex: 1 1 0; padding-inline: 18px; }
+    .done-top { padding-inline: 20px; }
   }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .tick circle, .tick path { stroke-dashoffset: 0; }
+  }
 </style>
 <style>body{margin:0}</style>
 </head>
@@ -171,13 +178,14 @@
   <div class="load" aria-hidden="true"><i></i></div>
   <div class="lt">جارٍ التحميل…</div>
 </div>
-<div class="wrap" dir="rtl" lang="ar">
-  <header>
+
+<div class="app" dir="rtl" lang="ar">
+  <header class="top">
     <div class="brand" id="brand"></div>
-    <div class="meta" id="meta"></div>
+    <div class="count" id="count" hidden></div>
   </header>
-  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
-  <main class="card" id="card" aria-live="polite"></main>
+  <div class="segs" id="segs" aria-hidden="true"></div>
+  <main id="card" aria-live="polite"></main>
 </div>
 
 <script>
@@ -203,57 +211,105 @@
   ];
 
   const ans = {};
-  let step = 0;
+  let step = -1;          // -1 ترحيب، من 0 للأسئلة، Q.length للمراجعة، بعدها شاشة النجاح
+  let editing = false;    // تعديل إجابة واحدة من شاشة المراجعة
+  let doneAt = "";
   const card = document.getElementById("card");
-  const bar = document.getElementById("bar");
-  const meta = document.getElementById("meta");
+  const segs = document.getElementById("segs");
+  const count = document.getElementById("count");
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const nf = n => n.toLocaleString("ar-EG");
+  const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
   function logo(px) {
     return '<svg class="logo" width="' + px + '" height="' + px + '" viewBox="0 0 48 48" role="img" aria-label="شعار الحزب">' +
-      '<rect class="lg-bg" width="48" height="48" rx="10"/>' +
+      '<rect class="lg-bg" width="48" height="48" rx="12"/>' +
       '<rect class="lg-fg" x="13" y="9" width="22" height="30" rx="3" stroke-width="2.5"/>' +
-      '<path class="lg-fg" d="M18 24.5l4.5 4.5 8-10" stroke-width="3.5"/>' +
-      "</svg>";
+      '<path class="lg-fg" d="M18 24.5l4.5 4.5 8-10" stroke-width="3.5"/></svg>';
   }
 
+  segs.innerHTML = Q.map(() => "<i></i>").join("");
+  function updateTop() {
+    const reviewing = step >= Q.length;
+    [...segs.children].forEach((el, i) => el.classList.toggle("on", reviewing || (step >= 0 && i <= step)));
+    if (step < 0) count.hidden = true;
+    else {
+      count.hidden = false;
+      count.textContent = step < Q.length ? "السؤال " + nf(step + 1) + " من " + nf(Q.length) : (step === Q.length ? "المراجعة" : "تم الإرسال");
+    }
+  }
+
+  function fmt(q) { const v = ans[q.id]; if (Array.isArray(v)) return v.length ? v.join("، ") : "—"; return v || "—"; }
+  function tripoliTime() { return new Date().toLocaleString("ar-EG", { dateStyle: "full", timeStyle: "medium", timeZone: "Africa/Tripoli" }); }
+  function toTop() { window.scrollTo({ top: 0 }); }
+  function focusTitle() { const h = card.querySelector("h1,h2"); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); } }
+
   function render() {
-    if (step === -1) return renderStart();
-    if (step >= Q.length) return renderReview();
+    updateTop();
+    if (step === -1) renderStart();
+    else if (step < Q.length) renderQuestion();
+    else if (step === Q.length) renderReview();
+    else renderDone();
+  }
+
+  function renderStart() {
+    card.innerHTML =
+      '<section class="ticket">' +
+        '<div class="hero">' +
+          '<div class="eyebrow">' + logo(54) + "<span>بطاقة المشاركة</span></div>" +
+          "<h1>مرحبًا بك في استبيان الحزب</h1>" +
+          "<p>رأيك مهم لنا. أجب عن أسئلة قصيرة ليتعرّف الحزب على ما تريده من القروب.</p>" +
+        "</div>" +
+        '<div class="perf" aria-hidden="true"></div>' +
+        '<div class="stub">' +
+          '<dl class="facts">' +
+            "<div><dt>عدد الأسئلة</dt><dd>" + nf(Q.length) + "</dd></div>" +
+            "<div><dt>المدة التقريبية</dt><dd>دقيقتان</dd></div>" +
+            "<div><dt>تبدأ بسؤال</dt><dd>الانتخابات</dd></div>" +
+          "</dl>" +
+          '<div class="actions"><button class="btn big" id="go" type="button">ابدأ الاستبيان</button></div>' +
+        "</div>" +
+      "</section>";
+    document.getElementById("go").onclick = () => { step = 0; render(); toTop(); focusTitle(); };
+  }
+
+  function renderQuestion() {
     const q = Q[step];
-    meta.textContent = "السؤال " + nf(step + 1) + " من " + nf(Q.length);
-    bar.style.width = (step / Q.length * 100) + "%";
     let body = "";
     if (q.type === "choice" || q.type === "multi") {
       const multi = q.type === "multi";
       const cur = ans[q.id] || (multi ? [] : "");
-      body = '<div class="options" role="' + (multi ? "group" : "radiogroup") + '" aria-labelledby="qt">' +
+      body = '<div class="qbody" role="' + (multi ? "group" : "radiogroup") + '" aria-labelledby="qt">' +
         q.options.map((o, i) => {
           const on = multi ? cur.includes(o) : cur === o;
-          return '<label class="opt' + (multi ? " multi" : "") + '"><input id="o' + i + '" type="' + (multi ? "checkbox" : "radio") +
-            '" name="q" value="' + esc(o) + '"' + (on ? " checked" : "") + '><span>' + esc(o) + '</span></label>';
+          return '<label class="opt' + (multi ? " multi" : "") + '" style="--i:' + i + '"><input id="o' + i + '" type="' + (multi ? "checkbox" : "radio") +
+            '" name="q" value="' + esc(o) + '"' + (on ? " checked" : "") + '><span class="box"><span class="mk">' + CHECK + '</span><span class="tx">' + esc(o) + "</span></span></label>";
         }).join("") + "</div>";
     } else if (q.type === "text") {
-      body = '<input id="field" type="text" autocomplete="off" placeholder="' + esc(q.placeholder || "") + '" value="' + esc(ans[q.id] || "") + '">';
+      body = '<div class="qbody"><input id="field" class="field" type="text" autocomplete="off" placeholder="' + esc(q.placeholder || "") + '" value="' + esc(ans[q.id] || "") + '"></div>';
     } else {
-      body = '<textarea id="field" placeholder="' + esc(q.placeholder || "") + '">' + esc(ans[q.id] || "") + "</textarea>";
+      body = '<div class="qbody"><textarea id="field" class="field" placeholder="' + esc(q.placeholder || "") + '">' + esc(ans[q.id] || "") + "</textarea></div>";
     }
+    const last = step === Q.length - 1;
     card.innerHTML =
-      '<div class="qno">السؤال ' + nf(step + 1) + "</div>" +
-      '<h1 id="qt">' + esc(q.text) + "</h1>" +
-      (q.hint ? '<p class="hint">' + esc(q.hint) + "</p>" : "") +
-      body +
-      '<p class="err" id="err" role="alert"></p>' +
-      '<div class="actions">' +
-        (step > 0 ? '<button class="btn ghost" id="back" type="button">السابق</button>' : "") +
-        '<span class="spacer"></span>' +
-        '<button class="btn" id="next" type="button">' + (step === Q.length - 1 ? "مراجعة الإجابات" : "التالي") + "</button>" +
-      "</div>";
+      '<section class="ticket">' +
+        '<div class="qhead"><span class="chip">' + (editing ? "تعديل الإجابة" : "السؤال " + nf(step + 1)) + "</span>" +
+          '<h1 id="qt">' + esc(q.text) + "</h1>" + (q.hint ? '<p class="hint">' + esc(q.hint) + "</p>" : "") + "</div>" +
+        body +
+        '<p class="err" id="err" role="alert"></p>' +
+        '<div class="actions">' +
+          (editing ? '<button class="btn ghost" id="cancel" type="button">إلغاء</button>' : (step > 0 ? '<button class="btn ghost" id="back" type="button">السابق</button>' : "")) +
+          '<span class="spacer"></span>' +
+          '<button class="btn" id="next" type="button">' + (editing ? "حفظ التعديل" : (last ? "مراجعة الإجابات" : "التالي")) + "</button>" +
+        "</div>" +
+      "</section>";
     document.getElementById("next").onclick = next;
-    const b = document.getElementById("back"); if (b) b.onclick = () => { save(); step--; render(); };
-    const f = document.getElementById("field"); if (f && q.type === "text") { f.focus(); f.addEventListener("keydown", e => { if (e.key === "Enter") next(); }); }
+    const b = document.getElementById("back"); if (b) b.onclick = () => { save(); step--; render(); toTop(); focusTitle(); };
+    const c = document.getElementById("cancel"); if (c) c.onclick = () => { editing = false; step = Q.length; render(); toTop(); };
+    const f = document.getElementById("field");
+    if (f && q.type === "text") f.addEventListener("keydown", e => { if (e.key === "Enter") next(); });
+    focusTitle();
   }
 
   function save() {
@@ -271,49 +327,29 @@
       document.getElementById("err").textContent = q.type === "text" ? "اكتب إجابتك قبل المتابعة." : "اختر إجابة قبل المتابعة.";
       return;
     }
-    step++; render(); window.scrollTo({ top: 0 });
+    if (editing) { editing = false; step = Q.length; } else step++;
+    render(); toTop(); focusTitle();
   }
 
-  function fmt(q) { const v = ans[q.id]; if (Array.isArray(v)) return v.length ? v.join("، ") : "—"; return v || "—"; }
-
-  function tripoliTime() {
-    return new Date().toLocaleString("ar-EG", { dateStyle: "full", timeStyle: "medium", timeZone: "Africa/Tripoli" });
-  }
-
-  function tableRows() {
-    return Q.map((q, i) => ({ n: nf(i + 1), q: q.text, a: fmt(q) }));
-  }
-
-  // جدول العرض داخل الصفحة
-  function pageTable(sentAt) {
-    const info = '<dl class="info"><div><dt>اسم المرسل</dt><dd>' + esc(ans.name || "—") + "</dd></div>" +
-      (sentAt ? '<div><dt>وقت الإرسال</dt><dd>' + esc(sentAt) + " (توقيت طرابلس)</dd></div>" : "") + "</dl>";
-    const rows = tableRows().map(r => '<tr><td class="c">' + r.n + "</td><td>" + esc(r.q) + '</td><td class="ans">' + esc(r.a) + "</td></tr>").join("");
-    return info + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="c">#</th><th>السؤال</th><th>الإجابة</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
-  }
-
-  function renderDone(sentAt) {
-    meta.textContent = "تم الإرسال";
-    bar.style.width = "100%";
-    card.innerHTML =
-      '<div class="ok" role="status"><b>تم إرسال إجاباتك بنجاح</b><span>' + esc(sentAt) + " (توقيت طرابلس)</span></div>" +
-      pageTable(sentAt) +
-      '<div class="actions"><span class="spacer"></span><button class="btn ghost" id="again" type="button">استبيان جديد</button></div>';
-    document.getElementById("again").onclick = () => { Object.keys(ans).forEach(k => delete ans[k]); step = -1; render(); };
-    window.scrollTo({ top: 0 });
+  function answerRows(withEdit) {
+    return '<div class="rv-list">' + Q.map((q, i) =>
+      '<div class="rv"><div class="rv-t"><span class="rv-n">' + nf(i + 1) + '</span><div><div class="rq">' + esc(q.text) + '</div><div class="ra">' + esc(fmt(q)) + "</div></div></div>" +
+      (withEdit ? '<button class="edit" type="button" data-i="' + i + '" aria-label="تعديل: ' + esc(q.text) + '">تعديل</button>' : "") + "</div>").join("") + "</div>";
   }
 
   function renderReview() {
-    meta.textContent = "المراجعة النهائية";
-    bar.style.width = "100%";
     card.innerHTML =
-      "<h2>راجع إجاباتك ثم أرسلها</h2>" +
-      pageTable(null) +
-      '<input id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden">' +
-      '<p class="err" id="sendErr" role="alert"></p>' +
-      '<div class="actions"><button class="btn ghost" id="edit" type="button">تعديل الإجابات</button><span class="spacer"></span>' +
-      '<button class="btn" id="send" type="button">إرسال الإجابات</button></div>';
-    document.getElementById("edit").onclick = () => { step = Q.length - 1; render(); };
+      '<section class="ticket">' +
+        '<div class="qhead"><span class="chip">المراجعة النهائية</span><h1>راجع إجاباتك قبل الإرسال</h1>' +
+          '<p class="hint">اضغط «تعديل» بجانب أي إجابة لتغييرها.</p></div>' +
+        answerRows(true) +
+        '<input id="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden">' +
+        '<p class="err" id="sendErr" role="alert"></p>' +
+        '<div class="actions"><button class="btn ghost" id="back" type="button">السابق</button><span class="spacer"></span>' +
+          '<button class="btn" id="send" type="button">إرسال الإجابات</button></div>' +
+      "</section>";
+    card.querySelectorAll(".edit").forEach(b => b.onclick = () => { step = Number(b.dataset.i); editing = true; render(); toTop(); });
+    document.getElementById("back").onclick = () => { step = Q.length - 1; render(); toTop(); };
 
     const btn = document.getElementById("send");
     btn.onclick = async () => {
@@ -330,7 +366,7 @@
         };
         // Google لا تسمح بقراءة الرد من موقع خارجي، لذلك نرسل بوضع no-cors ونعتبر النجاح اكتمال الطلب
         await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-        renderDone(sentAt);
+        doneAt = sentAt; step = Q.length + 1; render(); toTop(); focusTitle();
       } catch (e) {
         btn.disabled = false;
         btn.textContent = "إعادة المحاولة";
@@ -339,31 +375,28 @@
     };
   }
 
-  function renderStart() {
-    meta.textContent = "";
-    bar.style.width = "0";
+  function renderDone() {
     card.innerHTML =
-      '<div class="hero-logo">' + logo(64) + '<span class="tag">أهلًا بك</span></div>' +
-      "<h1>مرحبًا بك في استبيان الحزب</h1>" +
-      '<p class="hint">رأيك مهم لنا. أجب عن أسئلة قصيرة ليتعرّف الحزب على ما تريده من القروب.</p>' +
-      '<dl class="facts">' +
-        '<div><dt>عدد الأسئلة</dt><dd>' + nf(Q.length) + '</dd></div>' +
-        '<div><dt>المدة</dt><dd>دقيقتان تقريبًا</dd></div>' +
-        '<div><dt>السؤال الأول</dt><dd>الانتخابات</dd></div>' +
-      "</dl>" +
-      '<div class="actions"><button class="btn big" id="go" type="button">ابدأ الاستبيان</button></div>';
-    document.getElementById("go").onclick = () => { step = 0; render(); window.scrollTo({ top: 0 }); };
+      '<section class="ticket">' +
+        '<div class="done-top">' +
+          '<svg class="tick" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 14-16"/></svg>' +
+          "<h1>تم إرسال إجاباتك بنجاح</h1>" +
+          '<div class="when">' + esc(doneAt) + " (توقيت طرابلس)</div>" +
+        "</div>" +
+        answerRows(false) +
+        '<div class="actions"><span class="spacer"></span><button class="btn ghost" id="again" type="button">استبيان جديد</button></div>' +
+      "</section>";
+    document.getElementById("again").onclick = () => { Object.keys(ans).forEach(k => delete ans[k]); editing = false; step = -1; render(); toTop(); };
   }
 
-  document.getElementById("brand").innerHTML = logo(30) + "<span>استبيان الحزب</span>";
-  document.getElementById("splashLogo").innerHTML = logo(84);
-  step = -1;
+  document.getElementById("brand").innerHTML = logo(32) + "<span>استبيان الحزب</span>";
+  document.getElementById("splashLogo").innerHTML = logo(88);
   render();
 
   (function () {
     const splash = document.getElementById("splash");
     const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    function hide() { splash.classList.add("out"); setTimeout(() => splash.remove(), 350); }
+    function hide() { splash.classList.add("out"); setTimeout(() => splash.remove(), 400); }
     setTimeout(hide, reduce ? 500 : 1900);
   })();
 </script>

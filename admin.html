@@ -8,87 +8,115 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=Tajawal:wght@400;500;700&display=swap">
 <style>
-  /* Layout: a narrow login card, then a dashboard with summary tiles, one result card per question, and a searchable table of respondents. */
+  /* Layout: sticky top bar with actions; a summary row (donut for the elections question, key figures); a grid of result cards with ranked bars; then the respondents list with per-person delete, and a guarded delete-all at the bottom. */
   :root {
-    --bg: #e9eaec; --paper: #f7f7f6; --ink: #17181a; --muted: #5d636b; --line: #c9ccd1;
-    --accent: #a3201f; --accent-ink: #ffffff; --bar: #c9ccd1; --ok: #1f7a46;
+    --bg: #eceff4; --paper: #ffffff; --ink: #111a2c; --muted: #5a6478; --line: #d8dde7;
+    --accent: #b3202a; --accent-soft: #fbe8ea; --on-accent: #ffffff;
+    --navy: #0e1b38; --c2: #2c4a86; --c3: #9aa4b6; --bar: #c4cbd9;
+    --ok: #1b7a49; --danger: #b3202a;
+    --shadow: 0 1px 2px rgba(14,27,56,.06), 0 14px 34px -18px rgba(14,27,56,.26);
     --font-display: "Cairo", "Segoe UI", Tahoma, sans-serif;
     --font-body: "Tajawal", "Segoe UI", Tahoma, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9; --line: #34373c;
-      --accent: #e0524f; --accent-ink: #151515; --bar: #34373c; --ok: #4cc38a; color-scheme: dark;
+      --bg: #0a101d; --paper: #121b2e; --ink: #eef1f7; --muted: #9aa6bc; --line: #25324b;
+      --accent: #ee5860; --accent-soft: #2b1b27; --on-accent: #1c090c; --navy: #16264a; --c2: #7aa2ff; --c3: #5d6a85; --bar: #2c3a57;
+      --ok: #4cc38a; --danger: #ee5860;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px -18px rgba(0,0,0,.7);
+      color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #101113; --paper: #1a1c1f; --ink: #ecebe8; --muted: #9ba1a9; --line: #34373c;
-    --accent: #e0524f; --accent-ink: #151515; --bar: #34373c; --ok: #4cc38a; color-scheme: dark;
+    --bg: #0a101d; --paper: #121b2e; --ink: #eef1f7; --muted: #9aa6bc; --line: #25324b;
+    --accent: #ee5860; --accent-soft: #2b1b27; --on-accent: #1c090c; --navy: #16264a; --c2: #7aa2ff; --c3: #5d6a85; --bar: #2c3a57;
+    --ok: #4cc38a; --danger: #ee5860;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 34px -18px rgba(0,0,0,.7);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { max-width: 100%; overflow-x: hidden; }
   body {
     margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.7;
-    padding-block: 28px 56px;
+    padding-block: 0 64px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; }
+  .wrap { max-width: 1080px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+
+  .bar-top { position: sticky; top: 0; z-index: 20; background: var(--bg); padding-block: 16px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; }
   .logo { display: block; flex: none; }
   .logo .lg-bg { fill: var(--accent); }
-  .logo .lg-fg { fill: none; stroke: var(--accent-ink); stroke-linecap: round; stroke-linejoin: round; }
+  .logo .lg-fg { fill: none; stroke: var(--on-accent); stroke-linecap: round; stroke-linejoin: round; }
+  .tools { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .card { background: var(--paper); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.45; text-wrap: balance; }
-  h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1.05rem; }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.5; text-wrap: balance; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; } h3 { font-size: 1.05rem; }
   .muted { color: var(--muted); margin: 0; font-size: .95rem; }
-  .err { color: var(--accent); min-height: 1.4em; margin: 0; font-size: .95rem; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
-  input[type="password"], input[type="search"] {
-    width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); padding: 12px 14px; border-radius: 0;
-  }
-  input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .btn { font: inherit; font-weight: 600; cursor: pointer; padding: 11px 20px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 0; }
+  .btn { font: inherit; font-weight: 700; cursor: pointer; padding: 10px 20px; border: 2px solid var(--accent); background: var(--accent); color: var(--on-accent); border-radius: 12px; min-height: 44px; transition: filter .15s, transform .15s; }
+  .btn:hover { filter: brightness(1.07); }
   .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost:hover { border-color: var(--ink); filter: none; }
+  .btn.danger { background: var(--danger); border-color: var(--danger); }
+  .btn.sm { min-height: 36px; padding: 4px 14px; font-size: .9rem; border-radius: 10px; }
   .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .btn:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .grow { flex: 1; min-width: 180px; }
-  .login { max-width: 420px; margin-inline: auto; width: 100%; }
+  input[type="password"], input[type="search"], input[type="text"] { width: 100%; font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 12px; padding: 11px 14px; }
+  input:focus { outline: none; border-color: var(--accent); }
+  .err { color: var(--accent); min-height: 1.4em; margin: 0; font-size: .95rem; }
 
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-  .tile { background: var(--paper); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .tile .k { color: var(--muted); font-size: .85rem; }
-  .tile .v { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  /* login */
+  .login { max-width: 440px; width: 100%; margin: 48px auto 0; align-items: center; text-align: center; padding: 34px 26px; }
+  .login form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
 
-  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-  .bars { display: flex; flex-direction: column; gap: 12px; }
+  /* summary */
+  .summary { display: grid; grid-template-columns: minmax(280px, 1.1fr) 1fr; gap: 14px; }
+  .donut-card { flex-direction: row; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center; }
+  .donut { width: 168px; height: 168px; flex: none; }
+  .donut circle { fill: none; stroke-width: 6; }
+  .donut .trk { stroke: var(--line); }
+  .donut .s0 { stroke: var(--accent); } .donut .s1 { stroke: var(--c2); } .donut .s2 { stroke: var(--c3); }
+  .donut text { fill: var(--ink); font-family: var(--font-display); font-weight: 700; text-anchor: middle; }
+  .legend { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 190px; }
+  .legend .it { display: flex; align-items: baseline; gap: 10px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 4px; flex: none; transform: translateY(1px); }
+  .dot.s0 { background: var(--accent); } .dot.s1 { background: var(--c2); } .dot.s2 { background: var(--c3); }
+  .legend .lb { flex: 1; overflow-wrap: anywhere; }
+  .legend .nm { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+  .legend .nm small { color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 20px; display: flex; flex-direction: column; min-width: 0; }
+  .kpi.wide { grid-column: 1 / -1; }
+  .kpi .k { color: var(--muted); font-size: .88rem; }
+  .kpi .v { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .kpi .v.sm { font-size: 1.05rem; line-height: 1.6; }
+
+  .sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 14px; }
+  .bars { display: flex; flex-direction: column; gap: 14px; }
   .bar .top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
   .bar .lbl { overflow-wrap: anywhere; }
   .bar .num { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
   .bar .num small { color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
-  .track { height: 10px; background: var(--bar); margin-top: 4px; }
-  .fill { height: 100%; background: var(--accent); }
+  .track { height: 10px; background: var(--line); border-radius: 5px; margin-top: 5px; overflow: hidden; }
+  .fill { height: 100%; background: var(--bar); border-radius: 5px; }
+  .bar.lead .fill { background: var(--accent); }
+  .bar.lead .lbl { font-weight: 700; }
   .note { color: var(--muted); font-size: .85rem; margin: 0; }
-  .notes-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+  .notes-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 340px; overflow-y: auto; }
   .notes-list li { border-top: 1px solid var(--line); padding-top: 10px; overflow-wrap: anywhere; white-space: pre-wrap; }
   .notes-list li:first-child { border-top: 0; padding-top: 0; }
   .notes-list b { display: block; font-size: .85rem; color: var(--muted); font-weight: 500; }
 
-  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); }
-  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-  th { background: var(--accent); color: var(--accent-ink); text-align: right; padding: 10px 12px; font-weight: 700; white-space: nowrap; }
-  td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; min-width: 7em; overflow-wrap: anywhere; }
-  tbody tr:nth-child(even) { background: var(--bg); }
-  td.c, th.c { min-width: 0; width: 2.5em; text-align: center; font-variant-numeric: tabular-nums; }
-  td.t { white-space: nowrap; font-variant-numeric: tabular-nums; }
-  td.nm { font-weight: 700; }
-
-  .people { display: none; flex-direction: column; gap: 12px; }
-  .person { border: 1px solid var(--line); background: var(--bg); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  /* respondents */
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .person { border: 1px solid var(--line); background: var(--bg); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .person .ph { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .person .ph b { font-family: var(--font-display); font-size: 1.1rem; }
   .person .ph span { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
@@ -96,47 +124,60 @@
   .person dl div { border-top: 1px solid var(--line); padding-top: 8px; min-width: 0; }
   .person dt { color: var(--muted); font-size: .85rem; }
   .person dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
-  @media (max-width: 700px) { .tbl-wrap { display: none; } .people { display: flex; } }
+  .person .pa { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .delrow { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .delrow span { color: var(--danger); font-size: .85rem; font-weight: 700; }
 
-  @media (max-width: 480px) { .card { padding: 18px 14px; } .results { grid-template-columns: 1fr; } }
+  .zone { border: 2px dashed var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .zone h3 { color: var(--danger); }
+
+  #toast { position: fixed; z-index: 40; left: 50%; transform: translate(-50%, 20px); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--navy); color: #fff; padding: 12px 22px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: calc(100vw - 32px); text-align: center; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 860px) { .summary { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .card { padding: 18px 14px; } .results { grid-template-columns: 1fr; } .kpis { grid-template-columns: 1fr 1fr; } .kpi .v { font-size: 1.5rem; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header class="bar-top">
     <div class="brand" id="brand"></div>
-    <div class="row" id="tools" hidden>
-      <button class="btn ghost" id="refresh" type="button">تحديث</button>
-      <button class="btn ghost" id="csv" type="button">تصدير CSV</button>
-      <button class="btn ghost" id="logout" type="button">خروج</button>
+    <div class="tools" id="tools" hidden>
+      <button class="btn ghost sm" id="refresh" type="button">تحديث</button>
+      <button class="btn ghost sm" id="csv" type="button">تصدير CSV</button>
+      <button class="btn ghost sm" id="logout" type="button">خروج</button>
     </div>
   </header>
 
   <section class="card login" id="login">
+    <div id="loginLogo"></div>
     <h1>لوحة النتائج</h1>
     <p class="muted">أدخل كلمة السر لعرض الإجابات.</p>
-    <form class="row" id="form" autocomplete="off">
-      <input id="key" class="grow" type="password" placeholder="كلمة السر" aria-label="كلمة السر" autocomplete="current-password">
+    <form id="form" autocomplete="off">
+      <input id="key" type="password" placeholder="كلمة السر" aria-label="كلمة السر" autocomplete="current-password">
       <button class="btn" id="enter" type="submit">دخول</button>
+      <p class="err" id="err" role="alert"></p>
     </form>
-    <p class="err" id="err" role="alert"></p>
   </section>
 
   <main id="dash" hidden>
-    <div class="tiles" id="tiles"></div>
-    <h2 style="margin-top:8px">نسب الإجابات</h2>
+    <div class="summary" id="summary"></div>
+    <div class="sec-h"><h2>نسب الإجابات</h2></div>
     <div class="results" id="results"></div>
-    <h2 style="margin-top:8px">إجابات كل شخص</h2>
+    <div class="sec-h"><h2>إجابات كل شخص</h2><span class="muted" id="count"></span></div>
     <div class="card">
-      <div class="row">
-        <input id="search" class="grow" type="search" placeholder="ابحث بالاسم أو بأي إجابة" aria-label="بحث">
-        <span class="muted" id="count"></span>
-      </div>
-      <div class="tbl-wrap"><table id="tbl"></table></div>
+      <input id="search" type="search" placeholder="ابحث بالاسم أو بأي إجابة" aria-label="بحث">
       <div class="people" id="people"></div>
+    </div>
+    <div class="zone" id="zone" style="margin-top:18px">
+      <h3>منطقة الحذف</h3>
+      <p class="muted">يمكنك حذف إجابة واحدة من بطاقتها في الأعلى. حذف الإجابة يتيح لصاحبها المشاركة من جديد. حذف الكل نهائي ولا يمكن التراجع عنه.</p>
+      <div id="zoneBody"></div>
     </div>
   </main>
 </div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww3Y1hLvaHeibDOyUX8clv5KyEVbhH3OOTd0QudSauvJpPkxEl1lzBDiZsoq3Au_X-Mg/exec";
@@ -146,33 +187,42 @@
   const nf = n => Number(n).toLocaleString("ar-EG");
   const pct = n => nf(Math.round(n)) + "٪";
 
-  let DATA = null, KEY = "";
+  let DATA = null, KEY = "", pendingDel = null, clearOpen = false;
 
   function logo(px) {
     return '<svg class="logo" width="' + px + '" height="' + px + '" viewBox="0 0 48 48" role="img" aria-label="شعار الحزب">' +
-      '<rect class="lg-bg" width="48" height="48" rx="10"/>' +
+      '<rect class="lg-bg" width="48" height="48" rx="12"/>' +
       '<rect class="lg-fg" x="13" y="9" width="22" height="30" rx="3" stroke-width="2.5"/>' +
       '<path class="lg-fg" d="M18 24.5l4.5 4.5 8-10" stroke-width="3.5"/></svg>';
   }
-  $("brand").innerHTML = logo(30) + "<span>نتائج الاستبيان</span>";
+  $("brand").innerHTML = logo(32) + "<span>نتائج الاستبيان</span>";
+  $("loginLogo").innerHTML = logo(60);
 
   const MESSAGES = {
     wrong: "كلمة السر غير صحيحة.",
     locked: "أُوقفت المحاولات مؤقتًا بعد عدة محاولات خاطئة. حاول بعد عشر دقائق.",
     not_configured: "لم تُضبط كلمة السر في Apps Script بعد.",
+    stale: "تغيّرت القائمة قبل الحذف، فحدّثناها لك. أعد المحاولة.",
     error: "حدث خطأ في الخادم. أعد المحاولة بعد قليل.",
     network: "تعذّر الاتصال. تأكد من الإنترنت ثم أعد المحاولة."
   };
 
-  async function fetchData(key) {
+  let toastTimer;
+  function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200); }
+
+  async function call(params) {
     let res;
     try {
-      const r = await fetch(SCRIPT_URL + "?action=results&key=" + encodeURIComponent(key));
+      const qs = Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
+      const r = await fetch(SCRIPT_URL + "?" + qs);
       res = await r.json();
     } catch (e) { throw new Error("network"); }
     if (!res || res.error || !res.ok) throw new Error((res && res.error) || "error");
     return res;
   }
+  const fetchData = key => call({ action: "results", key: key });
+
+  function showLogin() { $("login").hidden = false; $("dash").hidden = true; $("tools").hidden = true; }
 
   async function open(key, silent) {
     $("err").textContent = "";
@@ -186,30 +236,58 @@
     } catch (e) {
       try { sessionStorage.removeItem("k"); } catch (x) {}
       if (!silent) $("err").textContent = MESSAGES[e.message] || MESSAGES.error;
-      $("login").hidden = false; $("dash").hidden = true; $("tools").hidden = true;
+      showLogin();
     } finally { btn.disabled = false; btn.textContent = "دخول"; }
+  }
+
+  async function reload() {
+    try { DATA = await fetchData(KEY); render(); return true; }
+    catch (e) { toast(MESSAGES[e.message] || MESSAGES.error); if (["wrong", "locked", "not_configured"].includes(e.message)) showLogin(); return false; }
   }
 
   function listOf(row, q) { return q.type === "multi" ? row.a[q.id].split(" | ").filter(Boolean) : [row.a[q.id]]; }
 
+  function donut(parts, total) {
+    let off = 0;
+    const segs = parts.map((p, i) => {
+      const len = total ? p.count / total * 100 : 0;
+      const el = len > 0 ? '<circle class="s' + i + '" cx="21" cy="21" r="15.9155" stroke-dasharray="' + len.toFixed(2) + " " + (100 - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 21 21)"/>' : "";
+      off += len; return el;
+    }).join("");
+    return '<svg class="donut" viewBox="0 0 42 42" role="img" aria-label="توزيع الإجابات"><circle class="trk" cx="21" cy="21" r="15.9155"/>' + segs +
+      '<text x="21" y="22.6" font-size="8">' + nf(total) + '</text><text x="21" y="28" font-size="3" style="font-weight:500;fill:var(--muted)">مشارك</text></svg>';
+  }
+
   function render() {
     const rows = DATA.rows, qs = DATA.questions, total = rows.length;
+    const first = qs.find(q => q.type === "choice");
     const last = total ? rows[total - 1].time : "—";
-    $("tiles").innerHTML =
-      '<div class="tile"><span class="k">عدد المشاركين</span><span class="v">' + nf(total) + "</span></div>" +
-      '<div class="tile"><span class="k">آخر مشاركة</span><span class="v" style="font-size:1.05rem">' + esc(last) + "</span></div>" +
-      '<div class="tile"><span class="k">عدد الأسئلة</span><span class="v">' + nf(qs.length) + "</span></div>";
+
+    // summary: donut for the first choice question + key figures
+    let counts = first ? first.options.map(o => rows.filter(r => r.a[first.id] === o).length) : [];
+    const lead = counts.length && total ? counts.indexOf(Math.max.apply(null, counts)) : -1;
+    const parts = first ? first.options.slice(0, 3).map((o, i) => ({ label: o, count: counts[i] })) : [];
+    $("summary").innerHTML =
+      '<section class="card donut-card">' + (first ? donut(parts, total) +
+        '<div class="legend"><h3 style="margin-bottom:4px">' + esc(first.q) + "</h3>" +
+        parts.map((p, i) => '<div class="it"><span class="dot s' + i + '"></span><span class="lb">' + esc(p.label) + '</span><span class="nm">' + pct(total ? p.count / total * 100 : 0) + "<small>(" + nf(p.count) + ")</small></span></div>").join("") + "</div>" : "") + "</section>" +
+      '<div class="kpis">' +
+        '<div class="kpi"><span class="k">عدد المشاركين</span><span class="v">' + nf(total) + "</span></div>" +
+        '<div class="kpi"><span class="k">عدد الأسئلة</span><span class="v">' + nf(qs.length) + "</span></div>" +
+        '<div class="kpi wide"><span class="k">آخر مشاركة</span><span class="v sm">' + esc(last) + "</span></div>" +
+        (lead >= 0 ? '<div class="kpi wide"><span class="k">الأعلى تصويتًا في «' + esc(first.q) + '»</span><span class="v sm">' + esc(first.options[lead]) + " · " + pct(counts[lead] / total * 100) + "</span></div>" : "") +
+      "</div>";
 
     if (!total) {
       $("results").innerHTML = '<div class="card"><p class="muted">لا توجد إجابات بعد. ستظهر النسب هنا عند وصول أول مشاركة.</p></div>';
     } else {
       $("results").innerHTML = qs.map(q => {
         if (q.type === "choice" || q.type === "multi") {
-          const counts = q.options.map(o => rows.filter(r => listOf(r, q).includes(o)).length);
+          const cs = q.options.map(o => rows.filter(r => listOf(r, q).includes(o)).length), mx = Math.max.apply(null, cs);
           const body = q.options.map((o, i) => {
-            const p = counts[i] / total * 100;
-            return '<div class="bar"><div class="top"><span class="lbl">' + esc(o) + '</span><span class="num">' + pct(p) +
-              "<small>(" + nf(counts[i]) + ")</small></span></div>" +
+            const p = cs[i] / total * 100;
+            return '<div class="bar' + (cs[i] === mx && mx > 0 ? " lead" : "") + '"><div class="top"><span class="lbl">' + esc(o) + '</span><span class="num">' + pct(p) +
+              "<small>(" + nf(cs[i]) + ")</small></span></div>" +
               '<div class="track"><div class="fill" style="width:' + p.toFixed(1) + '%"></div></div></div>';
           }).join("");
           return '<section class="card"><h3>' + esc(q.q) + '</h3><div class="bars">' + body + "</div>" +
@@ -221,24 +299,76 @@
           (items.length ? '<ul class="notes-list">' + items.join("") + "</ul>" : '<p class="muted">لا توجد إجابات.</p>') + "</section>";
       }).join("");
     }
-    renderTable();
+    renderPeople();
+    renderZone();
   }
 
-  function renderTable() {
+  function delButtons(r) {
+    if (pendingDel === r.n) {
+      return '<span class="delrow"><span>حذف إجابة ' + esc(r.a.name || "") + '؟</span>' +
+        '<button class="btn danger sm" type="button" data-go="' + r.n + '">نعم، احذف</button>' +
+        '<button class="btn ghost sm" type="button" data-no="1">إلغاء</button></span>';
+    }
+    return '<button class="btn ghost sm" type="button" data-del="' + r.n + '">حذف</button>';
+  }
+
+  function renderPeople() {
     const qs = DATA.questions, term = $("search").value.trim().toLowerCase();
     const shown = DATA.rows.filter(r => !term || (r.time + " " + qs.map(q => r.a[q.id]).join(" ")).toLowerCase().includes(term));
     $("count").textContent = "يعرض " + nf(shown.length) + " من " + nf(DATA.rows.length);
     const cols = qs.filter(q => q.id !== "name");
-    $("tbl").innerHTML =
-      '<thead><tr><th class="c">#</th><th>الوقت</th><th>الاسم</th>' + cols.map(q => "<th>" + esc(q.q) + "</th>").join("") + "</tr></thead><tbody>" +
-      (shown.length ? shown.map(r => '<tr><td class="c">' + nf(r.n) + '</td><td class="t">' + esc(r.time) + '</td><td class="nm">' + esc(r.a.name || "—") + "</td>" +
-        cols.map(q => "<td>" + esc((r.a[q.id] || "—").split(" | ").join("، ")) + "</td>").join("") + "</tr>").join("")
-        : '<tr><td colspan="' + (cols.length + 3) + '" class="muted">لا توجد نتائج مطابقة.</td></tr>') + "</tbody>";
+    const val = (r, q) => esc((r.a[q.id] || "—").split(" | ").join("، "));
     $("people").innerHTML = shown.length ? shown.map(r =>
       '<article class="person"><div class="ph"><b>' + nf(r.n) + ". " + esc(r.a.name || "—") + "</b><span>" + esc(r.time) + "</span></div><dl>" +
-      cols.map(q => "<div><dt>" + esc(q.q) + "</dt><dd>" + esc((r.a[q.id] || "—").split(" | ").join("، ")) + "</dd></div>").join("") + "</dl></article>").join("")
+      cols.map(q => "<div><dt>" + esc(q.q) + "</dt><dd>" + val(r, q) + "</dd></div>").join("") + '</dl><div class="pa">' + delButtons(r) + "</div></article>").join("")
       : '<p class="muted">لا توجد نتائج مطابقة.</p>';
   }
+
+  function renderZone() {
+    const n = DATA.rows.length;
+    if (!n) { $("zoneBody").innerHTML = '<p class="muted">لا توجد إجابات لحذفها.</p>'; return; }
+    $("zoneBody").innerHTML = clearOpen
+      ? '<p class="err" style="min-height:0">سيتم حذف ' + nf(n) + ' إجابة نهائيًا. اكتب كلمة «حذف» للتأكيد.</p>' +
+        '<div class="row"><input id="clearTxt" class="grow" type="text" placeholder="اكتب: حذف" aria-label="تأكيد حذف الكل" autocomplete="off">' +
+        '<button class="btn danger" id="clearGo" type="button" disabled>حذف كل الإجابات</button>' +
+        '<button class="btn ghost" id="clearNo" type="button">إلغاء</button></div>'
+      : '<button class="btn ghost" id="clearOpen" type="button">حذف كل الإجابات…</button>';
+  }
+
+  async function doDelete(n) {
+    const row = DATA.rows.find(r => r.n === n);
+    if (!row) return;
+    try {
+      await call({ action: "delete", key: KEY, n: row.n, time: row.time });
+      pendingDel = null;
+      toast("تم حذف إجابة " + (row.a.name || "") + ".");
+      await reload();
+    } catch (e) {
+      pendingDel = null;
+      toast(MESSAGES[e.message] || MESSAGES.error);
+      if (e.message === "stale") await reload(); else renderPeople();
+    }
+  }
+
+  function bindList(e) {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.del) { pendingDel = Number(t.dataset.del); renderPeople(); }
+    else if (t.dataset.no) { pendingDel = null; renderPeople(); }
+    else if (t.dataset.go) { t.disabled = true; doDelete(Number(t.dataset.go)); }
+  }
+  $("people").addEventListener("click", bindList);
+
+  $("zoneBody").addEventListener("click", async e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.id === "clearOpen") { clearOpen = true; renderZone(); const i = $("clearTxt"); if (i) i.focus(); }
+    else if (t.id === "clearNo") { clearOpen = false; renderZone(); }
+    else if (t.id === "clearGo") {
+      t.disabled = true;
+      try { await call({ action: "clear", key: KEY, confirm: "yes" }); clearOpen = false; pendingDel = null; toast("تم حذف كل الإجابات."); await reload(); }
+      catch (err) { toast(MESSAGES[err.message] || MESSAGES.error); t.disabled = false; }
+    }
+  });
+  $("zoneBody").addEventListener("input", e => { if (e.target.id === "clearTxt") $("clearGo").disabled = e.target.value.trim() !== "حذف"; });
 
   function csvCell(v) {
     v = String(v == null ? "" : v).split(" | ").join("، ");
@@ -258,11 +388,10 @@
   }
 
   $("form").addEventListener("submit", e => { e.preventDefault(); const k = $("key").value; if (!k) { $("err").textContent = "اكتب كلمة السر."; return; } open(k, false); });
-  $("search").addEventListener("input", () => DATA && renderTable());
-  $("refresh").onclick = async () => { $("refresh").disabled = true; try { DATA = await fetchData(KEY); render(); } catch (e) { alert_(MESSAGES[e.message] || MESSAGES.error); } $("refresh").disabled = false; };
+  $("search").addEventListener("input", () => DATA && renderPeople());
+  $("refresh").onclick = async () => { $("refresh").disabled = true; if (await reload()) toast("تم التحديث."); $("refresh").disabled = false; };
   $("csv").onclick = () => DATA && exportCsv();
-  $("logout").onclick = () => { try { sessionStorage.removeItem("k"); } catch (e) {} DATA = null; KEY = ""; $("key").value = ""; $("dash").hidden = true; $("tools").hidden = true; $("login").hidden = false; };
-  function alert_(m) { $("login").hidden = true; const t = $("tiles"); t.insertAdjacentHTML("afterbegin", '<p class="err" role="alert" style="grid-column:1/-1">' + esc(m) + "</p>"); }
+  $("logout").onclick = () => { try { sessionStorage.removeItem("k"); } catch (e) {} DATA = null; KEY = ""; pendingDel = null; clearOpen = false; $("key").value = ""; showLogin(); };
 
   try { const k = sessionStorage.getItem("k"); if (k) open(k, true); } catch (e) {}
 </script>
